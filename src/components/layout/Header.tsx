@@ -31,7 +31,7 @@ export const Header: React.FC = () => {
         <div className="flex items-center">
           <Link to="/" className="flex items-center mr-6">
             <span className="text-2xl font-serif font-bold bg-gradient-to-r from-lavender to-emerald bg-clip-text text-transparent">
-              Thought Spiral
+              GnL
             </span>
             <span className="ml-1 font-serif text-muted-foreground">{" "}café</span>
           </Link>
