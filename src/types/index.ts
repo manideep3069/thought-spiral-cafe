@@ -52,3 +52,15 @@ export interface Reply {
 }
 
 export type ReactionType = 'like' | 'love' | 'wow' | 'sad' | 'angry';
+
+export interface Notification {
+  id: string;
+  type: "reaction" | "reply" | "thread" | "like";
+  entity_type: string;
+  entity_id: string;
+  message?: string | null;
+  is_read: boolean;
+  created_at: string;
+  actor_id?: string | null;
+  user_id?: string;
+}

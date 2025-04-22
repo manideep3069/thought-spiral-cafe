@@ -10,10 +10,12 @@ export interface Notification {
   id: string;
   type: NotificationType;
   entity_type: string;
+  entity_id: string; // Added the missing entity_id property
   message?: string | null;
   is_read: boolean;
   created_at: string;
   actor_id?: string | null;
+  user_id?: string; // Added user_id for completeness
 }
 
 interface NotificationCardProps {
