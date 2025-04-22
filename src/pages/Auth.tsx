@@ -1,13 +1,21 @@
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
 import { CustomButton } from '@/components/ui/custom-button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -19,15 +27,69 @@ const Auth = () => {
   }, [navigate]);
 
   const handleGoogleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin
-      }
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
 
-    if (error) {
-      console.error('Error signing in with Google:', error.message);
+      if (error) {
+        toast({
+          title: "Authentication Error",
+          description: error.message,
+          variant: "destructive"
+        });
+        console.error('Error signing in with Google:', error.message);
+      }
+    } catch (error) {
+      console.error('Error during authentication:', error);
+    }
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      let result;
+      
+      if (isSignUp) {
+        // Sign up with email
+        result = await supabase.auth.signUp({
+          email,
+          password,
+        });
+      } else {
+        // Sign in with email
+        result = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+      }
+
+      if (result.error) {
+        toast({
+          title: "Authentication Error",
+          description: result.error.message,
+          variant: "destructive"
+        });
+        console.error('Auth error:', result.error.message);
+      } else {
+        if (isSignUp && result.data?.user && !result.data.session) {
+          toast({
+            title: "Verification email sent",
+            description: "Please check your email to confirm your account",
+          });
+        } else if (result.data?.session) {
+          navigate('/');
+        }
+      }
+    } catch (error) {
+      console.error('Error during authentication:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -44,6 +106,49 @@ const Auth = () => {
             </p>
           </div>
 
+          <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="your@email.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <CustomButton 
+              type="submit" 
+              className="w-full justify-center" 
+              isLoading={isLoading}
+            >
+              {isSignUp ? 'Sign Up' : 'Sign In'}
+            </CustomButton>
+          </form>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <CustomButton
               variant="outline"
@@ -52,6 +157,18 @@ const Auth = () => {
             >
               Sign in with Google
             </CustomButton>
+
+            <div className="text-center text-sm">
+              <button 
+                type="button"
+                className="text-primary hover:underline"
+                onClick={() => setIsSignUp(!isSignUp)}
+              >
+                {isSignUp 
+                  ? 'Already have an account? Sign In' 
+                  : 'Don\'t have an account? Sign Up'}
+              </button>
+            </div>
           </div>
         </Card>
       </div>
