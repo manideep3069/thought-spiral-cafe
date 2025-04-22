@@ -1,14 +1,32 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { CustomButton } from '@/components/ui/custom-button';
-import { Home, Search, Bell, User, Menu, X, Moon, Sun } from 'lucide-react';
+import { Home, Search, Bell, User, Menu, X, Moon, Sun, LogIn } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -23,6 +41,19 @@ export const Header: React.FC = () => {
     } else {
       document.documentElement.classList.remove('dark');
     }
+  };
+
+  const handleNewThought = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    // TODO: Implement new thought modal or navigate to new thought page
+    console.log('New thought button clicked');
+  };
+
+  const handleSignIn = () => {
+    navigate('/auth');
   };
 
   return (
@@ -78,15 +109,29 @@ export const Header: React.FC = () => {
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               </div>
 
-              <Link to="/profile">
-                <div className="h-9 w-9 rounded-full bg-lavender/20 flex items-center justify-center overflow-hidden">
-                  <User className="h-5 w-5 text-lavender" />
+              {user ? (
+                <>
+                  <Link to="/profile">
+                    <div className="h-9 w-9 rounded-full bg-lavender/20 flex items-center justify-center overflow-hidden">
+                      <User className="h-5 w-5 text-lavender" />
+                    </div>
+                  </Link>
+                  
+                  <CustomButton variant="accent" size="sm" onClick={handleNewThought}>
+                    New Thought
+                  </CustomButton>
+                </>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <CustomButton variant="outline" size="sm" onClick={handleSignIn}>
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In
+                  </CustomButton>
+                  <CustomButton variant="accent" size="sm" onClick={handleSignIn}>
+                    Sign Up
+                  </CustomButton>
                 </div>
-              </Link>
-              
-              <CustomButton variant="accent" size="sm">
-                New Thought
-              </CustomButton>
+              )}
             </>
           ) : (
             <button 
@@ -132,24 +177,54 @@ export const Header: React.FC = () => {
               <Bell className="h-5 w-5 mr-3" />
               <span>Notifications</span>
             </Link>
-            <Link 
-              to="/profile" 
-              className="flex items-center p-3 rounded-lg hover:bg-muted"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <User className="h-5 w-5 mr-3" />
-              <span>Profile</span>
-            </Link>
             
-            <div className="pt-4 mt-4 border-t border-border">
-              <CustomButton 
-                variant="accent" 
-                className="w-full justify-center"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                New Thought
-              </CustomButton>
-            </div>
+            {user ? (
+              <>
+                <Link 
+                  to="/profile" 
+                  className="flex items-center p-3 rounded-lg hover:bg-muted"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <User className="h-5 w-5 mr-3" />
+                  <span>Profile</span>
+                </Link>
+                <div className="pt-4 mt-4 border-t border-border">
+                  <CustomButton 
+                    variant="accent" 
+                    className="w-full justify-center"
+                    onClick={() => {
+                      handleNewThought();
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    New Thought
+                  </CustomButton>
+                </div>
+              </>
+            ) : (
+              <div className="pt-4 mt-4 border-t border-border space-y-2">
+                <CustomButton 
+                  variant="outline"
+                  className="w-full justify-center"
+                  onClick={() => {
+                    handleSignIn();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Sign In
+                </CustomButton>
+                <CustomButton 
+                  variant="accent"
+                  className="w-full justify-center"
+                  onClick={() => {
+                    handleSignIn();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Sign Up
+                </CustomButton>
+              </div>
+            )}
           </div>
         </div>
       )}
