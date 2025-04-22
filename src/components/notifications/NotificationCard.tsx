@@ -1,22 +1,11 @@
 
 import React from "react";
-import { Bell, MessageSquare, Heart, ThumbsUp, ThumbsDown, User, Users } from "lucide-react";
+import { Bell, MessageSquare, Heart, ThumbsUp, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Notification } from "@/types"; // Import Notification type
 
 type NotificationType = "reaction" | "reply" | "thread" | "like";
-
-export interface Notification {
-  id: string;
-  type: NotificationType;
-  entity_type: string;
-  entity_id: string; // Added the missing entity_id property
-  message?: string | null;
-  is_read: boolean;
-  created_at: string;
-  actor_id?: string | null;
-  user_id?: string; // Added user_id for completeness
-}
 
 interface NotificationCardProps {
   notification: Notification;

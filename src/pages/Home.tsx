@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -83,14 +82,7 @@ const Home: React.FC = () => {
         
         {/* Sidebar */}
         <div className="w-full lg:w-80 space-y-6">
-          {/* New thought button */}
-          <CustomButton 
-            variant="accent" 
-            size="lg"
-            className="w-full mb-6 text-lg"
-          >
-            Share a Thought
-          </CustomButton>
+          {/* Removed Share a Thought button from sidebar */}
           
           {/* Popular tags */}
           <div className="p-6 bg-card rounded-2xl border border-border shadow-sm">

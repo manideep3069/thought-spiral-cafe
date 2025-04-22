@@ -2,10 +2,12 @@
 import React, { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { NotificationCard, Notification } from "@/components/notifications/NotificationCard";
+import { NotificationCard } from "@/components/notifications/NotificationCard";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
+import { Notification } from "@/types";
+import { Layout } from "@/components/layout/Layout";
 
 const fetchNotifications = async () => {
   const { data, error } = await supabase
@@ -93,44 +95,46 @@ const NotificationsPage: React.FC = () => {
   );
 
   return (
-    <div className="container py-6 max-w-2xl mx-auto">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Notifications</CardTitle>
-          <button
-            className="text-xs px-3 py-1 rounded bg-muted hover:bg-muted-foreground/10 text-primary font-medium transition disabled:opacity-60"
-            onClick={() => markAllMutation.mutate()}
-            disabled={markAllMutation.isPending || Boolean(!notifications?.length)}
-          >
-            Mark all as read
-          </button>
-        </CardHeader>
-        <CardContent>
-          {isLoading && (
-            <div className="py-8 flex justify-center text-muted-foreground">
-              Loading...
+    <Layout>
+      <div className="container py-6 max-w-2xl mx-auto">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Notifications</CardTitle>
+            <button
+              className="text-xs px-3 py-1 rounded bg-muted hover:bg-muted-foreground/10 text-primary font-medium transition disabled:opacity-60"
+              onClick={() => markAllMutation.mutate()}
+              disabled={markAllMutation.isPending || Boolean(!notifications?.length)}
+            >
+              Mark all as read
+            </button>
+          </CardHeader>
+          <CardContent>
+            {isLoading && (
+              <div className="py-8 flex justify-center text-muted-foreground">
+                Loading...
+              </div>
+            )}
+            {isError && (
+              <div className="py-8 text-destructive">{(error as Error)?.message}</div>
+            )}
+            {(!notifications || notifications.length === 0) && !isLoading && (
+              <div className="py-8 text-center text-muted-foreground">
+                No notifications yet.
+              </div>
+            )}
+            <div className="space-y-2">
+              {(notifications ?? []).map((notification) => (
+                <NotificationCard
+                  key={notification.id}
+                  notification={notification}
+                  onClick={() => handleNotificationClick(notification)}
+                />
+              ))}
             </div>
-          )}
-          {isError && (
-            <div className="py-8 text-destructive">{(error as Error)?.message}</div>
-          )}
-          {(!notifications || notifications.length === 0) && !isLoading && (
-            <div className="py-8 text-center text-muted-foreground">
-              No notifications yet.
-            </div>
-          )}
-          <div className="space-y-2">
-            {(notifications ?? []).map((notification) => (
-              <NotificationCard
-                key={notification.id}
-                notification={notification}
-                onClick={() => handleNotificationClick(notification)}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
   );
 };
 
