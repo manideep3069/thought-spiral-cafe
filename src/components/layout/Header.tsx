@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CustomButton } from '@/components/ui/custom-button';
@@ -6,11 +5,13 @@ import { Home, Search, Bell, User, Menu, X, Moon, Sun, LogIn } from 'lucide-reac
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { NewThoughtModal } from "@/components/post/NewThoughtModal";
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isNewThoughtModalOpen, setIsNewThoughtModalOpen] = useState(false);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -48,8 +49,7 @@ export const Header: React.FC = () => {
       navigate('/auth');
       return;
     }
-    // TODO: Implement new thought modal or navigate to new thought page
-    console.log('New thought button clicked');
+    setIsNewThoughtModalOpen(true);
   };
 
   const handleSignIn = () => {
@@ -228,6 +228,11 @@ export const Header: React.FC = () => {
           </div>
         </div>
       )}
+      
+      <NewThoughtModal 
+        isOpen={isNewThoughtModalOpen}
+        onClose={() => setIsNewThoughtModalOpen(false)}
+      />
     </header>
   );
 };
