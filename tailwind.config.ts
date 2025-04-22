@@ -52,6 +52,22 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+                // Thought Spiral Cafe Custom Colors
+                lavender: {
+                    DEFAULT: '#4C2A85', // Royal Dark Lavender
+                    light: '#6D3BBD',
+                    dark: '#3A2064',
+                },
+                emerald: {
+                    DEFAULT: '#2ecc71', // Emerald Green
+                    light: '#40e083',
+                    dark: '#27ae60',
+                },
+                cafe: {
+                    light: '#F5EFE7',  // Soft cream
+                    DEFAULT: '#D0B49F', // Café mocha
+                    dark: '#6F4E37',   // Coffee brown
+                },
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
