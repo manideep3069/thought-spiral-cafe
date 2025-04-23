@@ -29,8 +29,7 @@ const AuthCallback = () => {
         if (error) {
           setError(error.message);
         } else if (data.session) {
-          // If it's a sign up (no good way to detect this reliably),
-          // we'll assume new user and redirect to profile
+          // Redirect to profile page after successful authentication
           window.location.href = '/profile';
         } else {
           window.location.href = '/';

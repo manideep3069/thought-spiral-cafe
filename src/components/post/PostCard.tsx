@@ -37,12 +37,15 @@ export const PostCard: React.FC<PostCardProps> = ({
     angry: <Frown className="h-4 w-4 mr-1 rotate-180" />
   };
 
-  const reactions = Object.entries(post.reactions)
-    .filter(([_, count]) => count > 0)
-    .map(([type, count]) => ({
-      type: type as ReactionType,
-      count
-    }));
+  // Handle case where post.reactions might be undefined or null
+  const reactions = post.reactions 
+    ? Object.entries(post.reactions)
+      .filter(([_, count]) => count > 0)
+      .map(([type, count]) => ({
+        type: type as ReactionType,
+        count
+      }))
+    : [];
 
   return (
     <article className={cn(
@@ -60,7 +63,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             />
           ) : (
             <span className="text-lavender font-semibold text-sm">
-              {author?.name.substring(0, 2).toUpperCase()}
+              {author?.name.substring(0, 2).toUpperCase() || "AN"}
             </span>
           )}
         </div>
@@ -110,7 +113,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       
       {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {post.tags.map(tag => (
+        {post.tags && post.tags.map(tag => (
           <Tag key={tag} text={tag} color="primary" />
         ))}
       </div>
