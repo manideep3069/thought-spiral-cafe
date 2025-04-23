@@ -4,7 +4,7 @@ import { Post, User, ReactionType } from "@/types";
 import { getUserById } from "@/data/mockData";
 import { CustomButton } from "@/components/ui/custom-button";
 import { Tag } from "@/components/ui/tag";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { Heart, MessageSquare, Share2, ThumbsUp, Frown, AlertCircle } from "lucide-react";
 
 interface PostCardProps {
@@ -46,6 +46,17 @@ export const PostCard: React.FC<PostCardProps> = ({
         count
       }))
     : [];
+    
+  // Format the date safely
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return isValid(date) ? format(date, "MMM d, yyyy") : "Unknown date";
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Unknown date";
+    }
+  };
 
   return (
     <article className={cn(
@@ -70,7 +81,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         <div className="ml-3">
           <p className="font-medium text-foreground">{author?.name || "Anonymous"}</p>
           <p className="text-xs text-muted-foreground">
-            {format(new Date(post.createdAt), "MMM d, yyyy")}
+            {post.createdAt ? formatDate(post.createdAt) : "Unknown date"}
           </p>
         </div>
       </div>
