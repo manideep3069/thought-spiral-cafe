@@ -37,6 +37,15 @@ export const PostCard: React.FC<PostCardProps> = ({
     angry: <Frown className="h-4 w-4 mr-1 rotate-180" />
   };
 
+  // Custom colors for reactions
+  const reactionColors = {
+    like: "text-primary hover:text-primary/80", 
+    love: "text-red-500 hover:text-red-400",
+    wow: "text-amber-500 hover:text-amber-400",
+    sad: "text-blue-500 hover:text-blue-400",
+    angry: "text-orange-600 hover:text-orange-500"
+  };
+
   const mediaTypeIcons: Record<string, React.ReactNode> = {
     book: <Book className="h-4 w-4 mr-1 text-blue-500" />,
     music: <Music className="h-4 w-4 mr-1 text-purple-500" />,
@@ -150,21 +159,36 @@ export const PostCard: React.FC<PostCardProps> = ({
       
       {/* Reactions */}
       <div className="flex justify-between items-center mt-6">
-        <div className="flex space-x-2">
-          {reactions.length > 0 ? (
-            reactions.map(reaction => (
-              <button 
-                key={reaction.type}
-                onClick={() => handleReaction(reaction.type)}
-                className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-2 py-1 rounded-full"
-              >
-                {reactionIcons[reaction.type]}
-                {reaction.count}
-              </button>
-            ))
-          ) : (
-            <span className="text-xs text-muted-foreground">No reactions yet</span>
-          )}
+        <div className="flex flex-wrap gap-2">
+          {/* Show reaction buttons */}
+          <button 
+            onClick={() => handleReaction('like')}
+            className={`inline-flex items-center text-xs ${reactionColors.like} px-2 py-1 rounded-full border border-border hover:bg-muted/50`}
+          >
+            {reactionIcons.like}
+            {reactions.find(r => r.type === 'like')?.count || 'Like'}
+          </button>
+          <button 
+            onClick={() => handleReaction('love')}
+            className={`inline-flex items-center text-xs ${reactionColors.love} px-2 py-1 rounded-full border border-border hover:bg-muted/50`}
+          >
+            {reactionIcons.love}
+            {reactions.find(r => r.type === 'love')?.count || 'Love'}
+          </button>
+          <button 
+            onClick={() => handleReaction('wow')}
+            className={`inline-flex items-center text-xs ${reactionColors.wow} px-2 py-1 rounded-full border border-border hover:bg-muted/50`}
+          >
+            {reactionIcons.wow}
+            {reactions.find(r => r.type === 'wow')?.count || 'Wow'}
+          </button>
+          <button 
+            onClick={() => handleReaction('sad')}
+            className={`inline-flex items-center text-xs ${reactionColors.sad} px-2 py-1 rounded-full border border-border hover:bg-muted/50`}
+          >
+            {reactionIcons.sad}
+            {reactions.find(r => r.type === 'sad')?.count || 'Sad'}
+          </button>
         </div>
         
         <div className="flex space-x-2">

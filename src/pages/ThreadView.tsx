@@ -17,6 +17,50 @@ const ThreadView: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [loading, setLoading] = useState(true);
+  const [replyContent, setReplyContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  
+  const fetchReplies = async () => {
+    if (!postId) return;
+    
+    try {
+      const { data: supabaseReplies, error } = await supabase
+        .from('discussions')
+        .select('*')
+        .eq('post_id', postId)
+        .is('parent_discussion_id', null)
+        .order('created_at', { ascending: false });
+        
+      if (supabaseReplies && !error) {
+        // Format supabase replies to match our Reply type
+        const formattedReplies: Reply[] = supabaseReplies.map(reply => ({
+          id: reply.id,
+          content: reply.content || '',
+          authorId: reply.user_id,
+          postId: reply.post_id,
+          parentReplyId: reply.parent_discussion_id,
+          createdAt: reply.created_at,
+          reactions: {
+            like: 0,
+            love: 0,
+            wow: 0,
+            sad: 0,
+            angry: 0
+          }
+        }));
+        setReplies(formattedReplies);
+      } else {
+        // Fallback to mock data
+        const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
+        setReplies(mockReplies);
+      }
+    } catch (err) {
+      console.error("Error fetching replies:", err);
+      // Fallback to mock data
+      const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
+      setReplies(mockReplies);
+    }
+  };
   
   useEffect(() => {
     const fetchPostData = async () => {
@@ -67,50 +111,87 @@ const ThreadView: React.FC = () => {
         setPost(mockPost);
       }
       
-      // Get replies
-      try {
-        const { data: supabaseReplies, error } = await supabase
-          .from('discussions')
-          .select('*')
-          .eq('post_id', postId)
-          .is('parent_discussion_id', null)
-          .order('created_at', { ascending: false });
-          
-        if (supabaseReplies && !error) {
-          // Format supabase replies to match our Reply type
-          const formattedReplies: Reply[] = supabaseReplies.map(reply => ({
-            id: reply.id,
-            content: reply.content || '',
-            authorId: reply.user_id,
-            postId: reply.post_id,
-            parentReplyId: reply.parent_discussion_id,
-            createdAt: reply.created_at,
-            reactions: {
-              like: 0,
-              love: 0,
-              wow: 0,
-              sad: 0,
-              angry: 0
-            }
-          }));
-          setReplies(formattedReplies);
-        } else {
-          // Fallback to mock data
-          const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
-          setReplies(mockReplies);
-        }
-      } catch (err) {
-        console.error("Error fetching replies:", err);
-        // Fallback to mock data
-        const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
-        setReplies(mockReplies);
-      }
-      
+      await fetchReplies();
       setLoading(false);
     };
     
     fetchPostData();
   }, [postId]);
+  
+  const handleSubmitReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!replyContent.trim()) {
+      toast.error("Reply cannot be empty");
+      return;
+    }
+    
+    if (!postId) {
+      toast.error("Missing post ID");
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("Please login to comment");
+        setSubmitting(false);
+        return;
+      }
+      
+      // Add reply to supabase
+      const { data: newReply, error } = await supabase
+        .from('discussions')
+        .insert([
+          { 
+            post_id: postId,
+            user_id: user.id,
+            content: replyContent,
+            parent_discussion_id: null
+          }
+        ])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error posting reply:", error);
+        toast.error("Failed to post reply");
+        setSubmitting(false);
+        return;
+      }
+      
+      // Format the new reply to match our Reply type
+      const formattedReply: Reply = {
+        id: newReply.id,
+        content: newReply.content || '',
+        authorId: newReply.user_id,
+        postId: newReply.post_id,
+        parentReplyId: newReply.parent_discussion_id,
+        createdAt: newReply.created_at,
+        reactions: {
+          like: 0,
+          love: 0,
+          wow: 0,
+          sad: 0,
+          angry: 0
+        }
+      };
+      
+      // Add to replies state
+      setReplies(prevReplies => [formattedReply, ...prevReplies]);
+      setReplyContent('');
+      toast.success("Reply posted successfully");
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
   
   if (loading) {
     return (
@@ -156,15 +237,24 @@ const ThreadView: React.FC = () => {
         {/* Reply form */}
         <div className="mt-8 mb-6">
           <h3 className="text-lg font-medium mb-4">Join the Discussion</h3>
-          <textarea 
-            className="w-full p-4 rounded-2xl border border-border bg-card min-h-32 focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Share your thoughts..."
-          />
-          <div className="mt-4 flex justify-end">
-            <CustomButton variant="accent">
-              Post Reply
-            </CustomButton>
-          </div>
+          <form onSubmit={handleSubmitReply}>
+            <textarea 
+              className="w-full p-4 rounded-2xl border border-border bg-card min-h-32 focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Share your thoughts..."
+              value={replyContent}
+              onChange={(e) => setReplyContent(e.target.value)}
+              disabled={submitting}
+            />
+            <div className="mt-4 flex justify-end">
+              <CustomButton 
+                variant="accent" 
+                type="submit" 
+                disabled={submitting || !replyContent.trim()}
+              >
+                {submitting ? 'Posting...' : 'Post Reply'}
+              </CustomButton>
+            </div>
+          </form>
         </div>
         
         {/* Replies */}
