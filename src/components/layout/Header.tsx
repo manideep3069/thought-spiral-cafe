@@ -13,11 +13,30 @@ import { MobileMenu } from './MobileMenu';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Initialize from localStorage or system preference
+    const savedMode = localStorage.getItem('darkMode');
+    if (savedMode !== null) {
+      return savedMode === 'true';
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isNewThoughtModalOpen, setIsNewThoughtModalOpen] = useState(false);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Apply dark mode setting on component mount and when changed
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }, [isDarkMode]);
 
   useEffect(() => {
     // Get initial session
@@ -38,14 +57,7 @@ export const Header: React.FC = () => {
   };
 
   const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    setIsDarkMode(!isDarkMode);
   };
 
   const handleNewThought = () => {

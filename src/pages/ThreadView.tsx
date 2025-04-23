@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
@@ -7,13 +7,114 @@ import { ReplyCard } from '@/components/post/ReplyCard';
 import { getPostById, getRepliesForPost } from '@/data/mockData';
 import { ArrowLeft } from 'lucide-react';
 import { CustomButton } from '@/components/ui/custom-button';
+import { supabase } from '@/integrations/supabase/client';
+import { Post, Reply } from '@/types';
 
 const ThreadView: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
+  const [post, setPost] = useState<Post | null>(null);
+  const [replies, setReplies] = useState<Reply[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const post = postId ? getPostById(postId) : null;
-  const topLevelReplies = postId ? getRepliesForPost(postId).filter(reply => !reply.parentReplyId) : [];
+  useEffect(() => {
+    const fetchPostData = async () => {
+      if (!postId) return;
+      
+      // First try to get post from supabase if available
+      try {
+        const { data: supabasePost, error } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('id', postId)
+          .single();
+        
+        if (supabasePost && !error) {
+          // Format the post data to match our Post type
+          setPost({
+            id: supabasePost.id,
+            title: supabasePost.media_title || 'Untitled',
+            content: supabasePost.content || '',
+            authorId: supabasePost.user_id,
+            mediaMetadata: {
+              type: supabasePost.media_type || 'thought',
+              title: supabasePost.media_title,
+            },
+            openToDiscussion: supabasePost.is_open_for_discussion || false,
+            tags: [],
+            createdAt: supabasePost.created_at,
+            reactions: {
+              like: 0,
+              love: 0,
+              wow: 0,
+              sad: 0,
+              angry: 0
+            }
+          });
+        } else {
+          // Fallback to mock data
+          const mockPost = getPostById(postId);
+          setPost(mockPost);
+        }
+      } catch (err) {
+        // Fallback to mock data
+        const mockPost = getPostById(postId);
+        setPost(mockPost);
+      }
+      
+      // Get replies
+      try {
+        const { data: supabaseReplies, error } = await supabase
+          .from('discussions')
+          .select('*')
+          .eq('post_id', postId)
+          .is('parent_discussion_id', null)
+          .order('created_at', { ascending: false });
+          
+        if (supabaseReplies && !error) {
+          // Format supabase replies to match our Reply type
+          const formattedReplies: Reply[] = supabaseReplies.map(reply => ({
+            id: reply.id,
+            content: reply.content || '',
+            authorId: reply.user_id,
+            postId: reply.post_id,
+            parentReplyId: reply.parent_discussion_id,
+            createdAt: reply.created_at,
+            reactions: {
+              like: 0,
+              love: 0,
+              wow: 0,
+              sad: 0,
+              angry: 0
+            }
+          }));
+          setReplies(formattedReplies);
+        } else {
+          // Fallback to mock data
+          const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
+          setReplies(mockReplies);
+        }
+      } catch (err) {
+        // Fallback to mock data
+        const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
+        setReplies(mockReplies);
+      }
+      
+      setLoading(false);
+    };
+    
+    fetchPostData();
+  }, [postId]);
+  
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      </Layout>
+    );
+  }
   
   if (!post) {
     return (
@@ -28,6 +129,9 @@ const ThreadView: React.FC = () => {
       </Layout>
     );
   }
+  
+  // Get top level replies only
+  const topLevelReplies = replies.filter(reply => !reply.parentReplyId);
   
   return (
     <Layout>
