@@ -18,7 +18,7 @@ export interface Post {
   content: string;
   authorId: string;
   mediaMetadata?: {
-    type: 'book' | 'movie' | 'music' | 'quote';
+    type: 'book' | 'movie' | 'music' | 'quote' | 'thought';
     title?: string;
     author?: string;
     year?: number;

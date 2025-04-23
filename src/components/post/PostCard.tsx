@@ -97,7 +97,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       <h3 className="text-xl font-serif font-semibold mb-2">{post.title}</h3>
       
       {/* Media Type Badge */}
-      {post.mediaMetadata?.type && (
+      {post.mediaMetadata?.type && post.mediaMetadata.type !== 'thought' && (
         <div className="mb-3">
           <span className="inline-flex items-center px-2 py-1 rounded-md bg-muted text-xs font-medium">
             {mediaTypeIcons[post.mediaMetadata.type] || null}
