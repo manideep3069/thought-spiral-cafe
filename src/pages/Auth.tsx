@@ -123,7 +123,13 @@ const Auth = () => {
             description: "Please check your email to confirm your account",
           });
         } else if (result.data?.session) {
-          navigate('/');
+          // If it's a new signup, redirect to profile edit page
+          if (isSignUp) {
+            navigate('/profile');
+          } else {
+            // For regular login, go to homepage
+            navigate('/');
+          }
         }
       }
     } catch (error) {

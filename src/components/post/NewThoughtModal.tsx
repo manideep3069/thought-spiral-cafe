@@ -55,16 +55,20 @@ export const NewThoughtModal: React.FC<NewThoughtModalProps> = ({
       return;
     }
 
+    // Fix: Match column names properly with the database schema
     const { error } = await supabase.from('posts').insert({
-      title: title.trim(),
       content: content.trim(),
-      author_id: user.id,
-      tags: [],
+      user_id: user.id,
+      is_open_for_discussion: true, // Default to open for discussion
+      created_at: new Date().toISOString(),
+      media_title: title.trim(),
+      media_type: 'thought'
     });
 
     setIsSubmitting(false);
 
     if (error) {
+      console.error("Error creating post:", error);
       toast({
         title: "Error",
         description: "Failed to create thought. Please try again.",
@@ -78,6 +82,8 @@ export const NewThoughtModal: React.FC<NewThoughtModalProps> = ({
       setTitle("");
       setContent("");
       onClose();
+      // Optional: Reload the page or update the posts list
+      setTimeout(() => window.location.reload(), 1000);
     }
   };
 
