@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, LogIn } from 'lucide-react';
 import { CustomButton } from '@/components/ui/custom-button';
 import { User as SupabaseUser } from '@supabase/supabase-js';
@@ -16,6 +16,8 @@ export const AuthButtons: React.FC<AuthButtonsProps> = ({
   onNewThought,
   onSignIn,
 }) => {
+  const navigate = useNavigate();
+
   if (user) {
     return (
       <>
@@ -32,13 +34,21 @@ export const AuthButtons: React.FC<AuthButtonsProps> = ({
     );
   }
 
+  const handleSignIn = () => {
+    navigate('/auth');
+  };
+
+  const handleSignUp = () => {
+    navigate('/auth');
+  };
+
   return (
     <div className="flex items-center space-x-2">
-      <CustomButton variant="outline" size="sm" onClick={onSignIn}>
+      <CustomButton variant="outline" size="sm" onClick={handleSignIn}>
         <LogIn className="h-4 w-4 mr-2" />
         Sign In
       </CustomButton>
-      <CustomButton variant="accent" size="sm" onClick={onSignIn}>
+      <CustomButton variant="accent" size="sm" onClick={handleSignUp}>
         Sign Up
       </CustomButton>
     </div>

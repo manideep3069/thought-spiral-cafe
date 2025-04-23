@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { FcGoogle } from 'react-icons/fc';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -28,7 +30,9 @@ const Auth = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      setGoogleLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin
@@ -43,8 +47,17 @@ const Auth = () => {
         });
         console.error('Error signing in with Google:', error.message);
       }
+      
+      // The redirect will happen automatically if successful
     } catch (error) {
       console.error('Error during authentication:', error);
+      toast({
+        title: "Authentication Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -88,6 +101,11 @@ const Auth = () => {
       }
     } catch (error) {
       console.error('Error during authentication:', error);
+      toast({
+        title: "Authentication Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -154,8 +172,9 @@ const Auth = () => {
               variant="outline"
               className="w-full justify-center"
               onClick={handleGoogleSignIn}
+              isLoading={googleLoading}
             >
-              Sign in with Google
+              <span className="mr-2">Sign in with Google</span>
             </CustomButton>
 
             <div className="text-center text-sm">
