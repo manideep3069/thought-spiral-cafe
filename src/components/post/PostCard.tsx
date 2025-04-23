@@ -5,7 +5,7 @@ import { getUserById } from "@/data/mockData";
 import { CustomButton } from "@/components/ui/custom-button";
 import { Tag } from "@/components/ui/tag";
 import { format, isValid } from "date-fns";
-import { Heart, MessageSquare, Share2, ThumbsUp, Frown, AlertCircle } from "lucide-react";
+import { Heart, MessageSquare, Share2, ThumbsUp, Frown, AlertCircle, Book, Music, Film, Mic } from "lucide-react";
 
 interface PostCardProps {
   post: Post;
@@ -35,6 +35,13 @@ export const PostCard: React.FC<PostCardProps> = ({
     wow: <AlertCircle className="h-4 w-4 mr-1" />,
     sad: <Frown className="h-4 w-4 mr-1" />,
     angry: <Frown className="h-4 w-4 mr-1 rotate-180" />
+  };
+
+  const mediaTypeIcons: Record<string, React.ReactNode> = {
+    book: <Book className="h-4 w-4 mr-1 text-blue-500" />,
+    music: <Music className="h-4 w-4 mr-1 text-purple-500" />,
+    movie: <Film className="h-4 w-4 mr-1 text-red-500" />,
+    podcast: <Mic className="h-4 w-4 mr-1 text-green-500" />
   };
 
   // Handle case where post.reactions might be undefined or null
@@ -89,6 +96,16 @@ export const PostCard: React.FC<PostCardProps> = ({
       {/* Post title and content */}
       <h3 className="text-xl font-serif font-semibold mb-2">{post.title}</h3>
       
+      {/* Media Type Badge */}
+      {post.mediaMetadata?.type && (
+        <div className="mb-3">
+          <span className="inline-flex items-center px-2 py-1 rounded-md bg-muted text-xs font-medium">
+            {mediaTypeIcons[post.mediaMetadata.type] || null}
+            {post.mediaMetadata.type}
+          </span>
+        </div>
+      )}
+      
       {/* Show quote if available */}
       {post.mediaMetadata?.type === 'quote' && (
         <div className="my-4 pl-4 border-l-4 border-lavender italic text-foreground/80">
@@ -107,7 +124,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       </p>
       
       {/* Media metadata */}
-      {post.mediaMetadata && post.mediaMetadata.type !== 'quote' && (
+      {post.mediaMetadata && post.mediaMetadata.type !== 'quote' && post.mediaMetadata.title && post.mediaMetadata.type !== 'thought' && (
         <div className="mb-4 p-3 bg-muted rounded-xl text-sm">
           <p className="font-medium">
             {post.mediaMetadata.type.charAt(0).toUpperCase() + post.mediaMetadata.type.slice(1)}:
@@ -124,9 +141,11 @@ export const PostCard: React.FC<PostCardProps> = ({
       
       {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {post.tags && post.tags.map(tag => (
+        {post.tags && post.tags.length > 0 ? post.tags.map(tag => (
           <Tag key={tag} text={tag} color="primary" />
-        ))}
+        )) : (
+          <Tag text="general" color="default" />
+        )}
       </div>
       
       {/* Reactions */}
