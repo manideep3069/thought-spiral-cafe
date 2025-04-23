@@ -1,11 +1,14 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Post, User, ReactionType } from "@/types";
 import { getUserById } from "@/data/mockData";
 import { CustomButton } from "@/components/ui/custom-button";
 import { Tag } from "@/components/ui/tag";
 import { format, isValid } from "date-fns";
 import { Heart, MessageSquare, Share2, ThumbsUp, Frown, AlertCircle, Book, Music, Film, Mic } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface PostCardProps {
   post: Post;
@@ -19,10 +22,68 @@ export const PostCard: React.FC<PostCardProps> = ({
   onViewThread 
 }) => {
   const author = getUserById(post.authorId);
+  const [postReactions, setPostReactions] = useState(post.reactions);
+  const [activeReactions, setActiveReactions] = useState<Record<ReactionType, boolean>>({
+    like: false,
+    love: false,
+    wow: false,
+    sad: false,
+    angry: false
+  });
+  const [isAnimating, setIsAnimating] = useState<Record<ReactionType, boolean>>({
+    like: false,
+    love: false,
+    wow: false,
+    sad: false,
+    angry: false
+  });
   
-  const handleReaction = (type: ReactionType) => {
-    // This will be implemented with Supabase later
-    console.log(`Reacted with ${type} to post ${post.id}`);
+  const handleReaction = async (type: ReactionType) => {
+    try {
+      // Optimistic UI update - animate and increment immediately
+      setIsAnimating(prev => ({ ...prev, [type]: true }));
+      setActiveReactions(prev => ({ ...prev, [type]: !prev[type] }));
+      
+      const newCount = activeReactions[type] 
+        ? (postReactions[type] - 1) 
+        : (postReactions[type] + 1);
+      
+      setPostReactions(prev => ({
+        ...prev,
+        [type]: newCount < 0 ? 0 : newCount
+      }));
+      
+      // Clear animation after 300ms
+      setTimeout(() => {
+        setIsAnimating(prev => ({ ...prev, [type]: false }));
+      }, 300);
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Try to store in Supabase
+        const { error } = await supabase
+          .from('post_reactions')
+          .upsert([
+            { 
+              post_id: post.id, 
+              user_id: user.id,
+              reaction_type: type
+            }
+          ], { onConflict: ['post_id', 'user_id', 'reaction_type'] });
+        
+        if (error) {
+          console.log(`Reaction error: ${error.message}`);
+          // Silently fail, since we've already updated UI optimistically
+        }
+      }
+      
+      console.log(`Reacted with ${type} to post ${post.id}`);
+    } catch (err) {
+      console.error("Error handling reaction:", err);
+      // Don't revert UI since that would be jarring
+    }
   };
   
   const handleOpenDiscussion = () => {
@@ -54,8 +115,8 @@ export const PostCard: React.FC<PostCardProps> = ({
   };
 
   // Handle case where post.reactions might be undefined or null
-  const reactions = post.reactions 
-    ? Object.entries(post.reactions)
+  const reactions = postReactions 
+    ? Object.entries(postReactions)
       .filter(([_, count]) => count > 0)
       .map(([type, count]) => ({
         type: type as ReactionType,
@@ -163,31 +224,51 @@ export const PostCard: React.FC<PostCardProps> = ({
           {/* Show reaction buttons */}
           <button 
             onClick={() => handleReaction('like')}
-            className={`inline-flex items-center text-xs ${reactionColors.like} px-2 py-1 rounded-full border border-border hover:bg-muted/50`}
+            className={cn(
+              "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
+              activeReactions.like ? "bg-primary/10 font-medium border-primary/30" : "border-border hover:bg-muted/50",
+              reactionColors.like,
+              isAnimating.like && "animate-[scale-in_0.2s_ease-out]"
+            )}
           >
             {reactionIcons.like}
-            {reactions.find(r => r.type === 'like')?.count || 'Like'}
+            {postReactions.like > 0 ? postReactions.like : "Like"}
           </button>
           <button 
             onClick={() => handleReaction('love')}
-            className={`inline-flex items-center text-xs ${reactionColors.love} px-2 py-1 rounded-full border border-border hover:bg-muted/50`}
+            className={cn(
+              "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
+              activeReactions.love ? "bg-red-500/10 font-medium border-red-500/30" : "border-border hover:bg-muted/50",
+              reactionColors.love,
+              isAnimating.love && "animate-[scale-in_0.2s_ease-out]"
+            )}
           >
             {reactionIcons.love}
-            {reactions.find(r => r.type === 'love')?.count || 'Love'}
+            {postReactions.love > 0 ? postReactions.love : "Love"}
           </button>
           <button 
             onClick={() => handleReaction('wow')}
-            className={`inline-flex items-center text-xs ${reactionColors.wow} px-2 py-1 rounded-full border border-border hover:bg-muted/50`}
+            className={cn(
+              "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
+              activeReactions.wow ? "bg-amber-500/10 font-medium border-amber-500/30" : "border-border hover:bg-muted/50",
+              reactionColors.wow,
+              isAnimating.wow && "animate-[scale-in_0.2s_ease-out]"
+            )}
           >
             {reactionIcons.wow}
-            {reactions.find(r => r.type === 'wow')?.count || 'Wow'}
+            {postReactions.wow > 0 ? postReactions.wow : "Wow"}
           </button>
           <button 
             onClick={() => handleReaction('sad')}
-            className={`inline-flex items-center text-xs ${reactionColors.sad} px-2 py-1 rounded-full border border-border hover:bg-muted/50`}
+            className={cn(
+              "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
+              activeReactions.sad ? "bg-blue-500/10 font-medium border-blue-500/30" : "border-border hover:bg-muted/50",
+              reactionColors.sad,
+              isAnimating.sad && "animate-[scale-in_0.2s_ease-out]"
+            )}
           >
             {reactionIcons.sad}
-            {reactions.find(r => r.type === 'sad')?.count || 'Sad'}
+            {postReactions.sad > 0 ? postReactions.sad : "Sad"}
           </button>
         </div>
         
@@ -213,6 +294,3 @@ export const PostCard: React.FC<PostCardProps> = ({
     </article>
   );
 };
-
-// Import cn utility
-import { cn } from "@/lib/utils";

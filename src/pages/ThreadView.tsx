@@ -154,24 +154,60 @@ const ThreadView: React.FC = () => {
             parent_discussion_id: null
           }
         ])
-        .select()
-        .single();
+        .select();
       
       if (error) {
         console.error("Error posting reply:", error);
-        toast.error("Failed to post reply");
+        
+        // If it's an RLS error, show more helpful error message
+        if (error.code === '42501') {
+          toast.error("You don't have permission to post. Please try signing in again.");
+        } else {
+          toast.error("Failed to post reply: " + error.message);
+        }
+        
+        // Fallback to mock data reply if in development environment
+        if (process.env.NODE_ENV === 'development') {
+          const mockReply: Reply = {
+            id: Math.random().toString(),
+            content: replyContent,
+            authorId: user.id,
+            postId: postId,
+            parentReplyId: null,
+            createdAt: new Date().toISOString(),
+            reactions: {
+              like: 0,
+              love: 0,
+              wow: 0,
+              sad: 0,
+              angry: 0
+            }
+          };
+          
+          // Add to replies state
+          setReplies(prevReplies => [mockReply, ...prevReplies]);
+          setReplyContent('');
+          toast.success("Reply posted successfully (Mock Mode)");
+        }
+        
+        setSubmitting(false);
+        return;
+      }
+      
+      if (!newReply || newReply.length === 0) {
+        toast.error("No reply data returned");
         setSubmitting(false);
         return;
       }
       
       // Format the new reply to match our Reply type
       const formattedReply: Reply = {
-        id: newReply.id,
-        content: newReply.content || '',
-        authorId: newReply.user_id,
-        postId: newReply.post_id,
-        parentReplyId: newReply.parent_discussion_id,
-        createdAt: newReply.created_at,
+        id: newReply[0].id,
+        content: newReply[0].content || '',
+        authorId: newReply[0].user_id,
+        postId: newReply[0].post_id,
+        parentReplyId: newReply[0].parent_discussion_id,
+        createdAt: newReply[0].created_at,
         reactions: {
           like: 0,
           love: 0,
