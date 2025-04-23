@@ -9,6 +9,7 @@ import { ArrowLeft } from 'lucide-react';
 import { CustomButton } from '@/components/ui/custom-button';
 import { supabase } from '@/integrations/supabase/client';
 import { Post, Reply } from '@/types';
+import { toast } from 'sonner';
 
 const ThreadView: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -31,13 +32,16 @@ const ThreadView: React.FC = () => {
         
         if (supabasePost && !error) {
           // Format the post data to match our Post type
+          // Ensure media_type is one of the expected types or default to "thought"
+          const mediaType = supabasePost.media_type as "thought" | "book" | "movie" | "music" | "quote" | null;
+          
           setPost({
             id: supabasePost.id,
             title: supabasePost.media_title || 'Untitled',
             content: supabasePost.content || '',
             authorId: supabasePost.user_id,
             mediaMetadata: {
-              type: supabasePost.media_type || 'thought',
+              type: mediaType || 'thought',
               title: supabasePost.media_title,
             },
             openToDiscussion: supabasePost.is_open_for_discussion || false,
@@ -57,6 +61,7 @@ const ThreadView: React.FC = () => {
           setPost(mockPost);
         }
       } catch (err) {
+        console.error("Error fetching post:", err);
         // Fallback to mock data
         const mockPost = getPostById(postId);
         setPost(mockPost);
@@ -95,6 +100,7 @@ const ThreadView: React.FC = () => {
           setReplies(mockReplies);
         }
       } catch (err) {
+        console.error("Error fetching replies:", err);
         // Fallback to mock data
         const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
         setReplies(mockReplies);
