@@ -23,11 +23,11 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 top-16 z-50 bg-black/60 backdrop-blur-md animate-in slide-in-from-top-5">
+    <div className="fixed inset-0 top-16 z-50 bg-black animate-in slide-in-from-top-5">
       <div className="container py-6 space-y-4">
         <Link 
           to="/" 
-          className="flex items-center p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+          className="flex items-center p-3 rounded-lg bg-white/20 hover:bg-white/30 text-white"
           onClick={onClose}
         >
           <Home className="h-5 w-5 mr-3" />
@@ -35,7 +35,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         </Link>
         <Link 
           to="/discover" 
-          className="flex items-center p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+          className="flex items-center p-3 rounded-lg bg-white/20 hover:bg-white/30 text-white"
           onClick={onClose}
         >
           <Search className="h-5 w-5 mr-3" />
@@ -43,7 +43,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         </Link>
         <Link 
           to="/notifications" 
-          className="flex items-center p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+          className="flex items-center p-3 rounded-lg bg-white/20 hover:bg-white/30 text-white"
           onClick={onClose}
         >
           <Bell className="h-5 w-5 mr-3" />
@@ -54,7 +54,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           <>
             <Link 
               to="/profile" 
-              className="flex items-center p-3 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+              className="flex items-center p-3 rounded-lg bg-white/20 hover:bg-white/30 text-white"
               onClick={onClose}
             >
               <User className="h-5 w-5 mr-3" />
