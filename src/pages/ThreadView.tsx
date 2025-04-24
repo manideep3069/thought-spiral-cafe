@@ -302,7 +302,11 @@ const ThreadView: React.FC = () => {
           {topLevelReplies.length > 0 ? (
             <div className="space-y-2">
               {topLevelReplies.map(reply => (
-                <ReplyCard key={reply.id} reply={reply} />
+                <ReplyCard 
+                  key={reply.id} 
+                  reply={reply} 
+                  postId={postId || ''}  
+                />
               ))}
             </div>
           ) : (

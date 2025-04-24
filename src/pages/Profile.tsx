@@ -308,21 +308,8 @@ const Profile: React.FC = () => {
           </div>
         </div>
         
-        {currentUser && currentUser.id === (userId || currentUser.id) && (
-          <div className="absolute top-4 right-4">
-            <CustomButton 
-              variant="outline" 
-              size="sm" 
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </CustomButton>
-          </div>
-        )}
-
         {/* Profile content (with extra margin to clear the avatar) */}
-        <div className="mt-20 sm:mt-24">
+        <div className="mt-20 sm:mt-24 relative pb-20">
           {/* Tags */}
           {userProfile.tags && userProfile.tags.length > 0 && !isEditMode && (
             <div className="mb-8 flex flex-wrap gap-2 justify-center sm:justify-start">
@@ -465,6 +452,20 @@ const Profile: React.FC = () => {
                   Save Profile
                 </CustomButton>
               </div>
+            </div>
+          )}
+          
+          {/* Sign Out Button - Positioned at bottom right */}
+          {currentUser && currentUser.id === (userId || currentUser.id) && (
+            <div className="absolute bottom-0 right-0 mb-4">
+              <CustomButton 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </CustomButton>
             </div>
           )}
         </div>
