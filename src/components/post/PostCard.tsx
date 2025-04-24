@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Post, User, ReactionType } from "@/types";
 import { getUserById } from "@/data/mockData";
@@ -62,16 +61,17 @@ export const PostCard: React.FC<PostCardProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Try to store in Supabase
+        // Fix: Pass a single object rather than an array to upsert
         const { error } = await supabase
           .from('post_reactions')
-          .upsert([
+          .upsert(
             { 
               post_id: post.id, 
               user_id: user.id,
-              reaction_type: type
-            }
-          ], { onConflict: ['post_id', 'user_id', 'reaction_type'] });
+              reaction_type: type // This type needs to match what's in the database
+            },
+            { onConflict: 'post_id,user_id,reaction_type' }
+          );
         
         if (error) {
           console.log(`Reaction error: ${error.message}`);
@@ -98,7 +98,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     angry: <Frown className="h-4 w-4 mr-1 rotate-180" />
   };
 
-  // Custom colors for reactions
   const reactionColors = {
     like: "text-primary hover:text-primary/80", 
     love: "text-red-500 hover:text-red-400",
@@ -114,7 +113,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     podcast: <Mic className="h-4 w-4 mr-1 text-green-500" />
   };
 
-  // Handle case where post.reactions might be undefined or null
   const reactions = postReactions 
     ? Object.entries(postReactions)
       .filter(([_, count]) => count > 0)
@@ -124,7 +122,6 @@ export const PostCard: React.FC<PostCardProps> = ({
       }))
     : [];
     
-  // Format the date safely
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -140,7 +137,6 @@ export const PostCard: React.FC<PostCardProps> = ({
       "bg-card rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow border border-border",
       compact ? "max-w-2xl" : "w-full"
     )}>
-      {/* Author info */}
       <div className="flex items-center mb-4">
         <div className="h-10 w-10 rounded-full bg-lavender/20 flex items-center justify-center overflow-hidden">
           {author?.avatar ? (
@@ -163,10 +159,8 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
       </div>
       
-      {/* Post title and content */}
       <h3 className="text-xl font-serif font-semibold mb-2">{post.title}</h3>
       
-      {/* Media Type Badge */}
       {post.mediaMetadata?.type && post.mediaMetadata.type !== 'thought' && (
         <div className="mb-3">
           <span className="inline-flex items-center px-2 py-1 rounded-md bg-muted text-xs font-medium">
@@ -176,7 +170,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
       )}
       
-      {/* Show quote if available */}
       {post.mediaMetadata?.type === 'quote' && (
         <div className="my-4 pl-4 border-l-4 border-lavender italic text-foreground/80">
           "{post.mediaMetadata.title}"
@@ -193,7 +186,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         }
       </p>
       
-      {/* Media metadata */}
       {post.mediaMetadata && post.mediaMetadata.type !== 'quote' && post.mediaMetadata.title && post.mediaMetadata.type !== 'thought' && (
         <div className="mb-4 p-3 bg-muted rounded-xl text-sm">
           <p className="font-medium">
@@ -209,7 +201,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
       )}
       
-      {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
         {post.tags && post.tags.length > 0 ? post.tags.map(tag => (
           <Tag key={tag} text={tag} color="primary" />
@@ -218,10 +209,8 @@ export const PostCard: React.FC<PostCardProps> = ({
         )}
       </div>
       
-      {/* Reactions */}
       <div className="flex justify-between items-center mt-6">
         <div className="flex flex-wrap gap-2">
-          {/* Show reaction buttons */}
           <button 
             onClick={() => handleReaction('like')}
             className={cn(
