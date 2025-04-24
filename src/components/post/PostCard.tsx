@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Post, User, ReactionType } from "@/types";
 import { getUserById } from "@/data/mockData";
@@ -21,7 +22,16 @@ export const PostCard: React.FC<PostCardProps> = ({
   onViewThread 
 }) => {
   const author = getUserById(post.authorId);
-  const [postReactions, setPostReactions] = useState(post.reactions);
+  // Initialize with default values if post.reactions is undefined
+  const defaultReactions = {
+    like: 0,
+    love: 0,
+    wow: 0,
+    sad: 0,
+    angry: 0
+  };
+  
+  const [postReactions, setPostReactions] = useState(post.reactions || defaultReactions);
   const [activeReactions, setActiveReactions] = useState<Record<ReactionType, boolean>>({
     like: false,
     love: false,
@@ -113,6 +123,7 @@ export const PostCard: React.FC<PostCardProps> = ({
     podcast: <Mic className="h-4 w-4 mr-1 text-green-500" />
   };
 
+  // Safely create reactions array, handling potential undefined values
   const reactions = postReactions 
     ? Object.entries(postReactions)
       .filter(([_, count]) => count > 0)
@@ -131,6 +142,15 @@ export const PostCard: React.FC<PostCardProps> = ({
       return "Unknown date";
     }
   };
+
+  // Early return with a default UI if post is malformed to prevent errors
+  if (!post || !post.id) {
+    return (
+      <article className="bg-card rounded-2xl p-6 shadow-md border border-border">
+        <p className="text-muted-foreground">Error loading post</p>
+      </article>
+    );
+  }
 
   return (
     <article className={cn(
