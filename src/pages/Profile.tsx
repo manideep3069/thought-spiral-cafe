@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -6,7 +5,7 @@ import { PostCard } from '@/components/post/PostCard';
 import { Tag } from '@/components/ui/tag';
 import { mockUsers, mockPosts } from '@/data/mockData';
 import { CustomButton } from '@/components/ui/custom-button';
-import { Edit, MapPin, Calendar, Heart, Save } from 'lucide-react';
+import { Edit, MapPin, Calendar, Heart, Save, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -191,7 +190,34 @@ const Profile: React.FC = () => {
       </Layout>
     );
   }
-  
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        toast({
+          title: "Sign Out Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Signed Out",
+          description: "You have been successfully signed out"
+        });
+        navigate('/');
+      }
+    } catch (error) {
+      console.error("Unexpected sign-out error:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while signing out",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto">
@@ -282,6 +308,19 @@ const Profile: React.FC = () => {
           </div>
         </div>
         
+        {currentUser && currentUser.id === (userId || currentUser.id) && (
+          <div className="absolute top-4 right-4">
+            <CustomButton 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </CustomButton>
+          </div>
+        )}
+
         {/* Profile content (with extra margin to clear the avatar) */}
         <div className="mt-20 sm:mt-24">
           {/* Tags */}
