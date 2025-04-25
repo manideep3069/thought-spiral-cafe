@@ -15,13 +15,15 @@ interface ReplyCardProps {
   level?: number;
   maxLevel?: number;
   postId: string;
+  spiralName?: string;
 }
 
 export const ReplyCard: React.FC<ReplyCardProps> = ({ 
   reply,
   level = 0,
   maxLevel = 5,
-  postId
+  postId,
+  spiralName
 }) => {
   const [expanded, setExpanded] = React.useState(level < 3);
   const [showReplyForm, setShowReplyForm] = useState(false);
@@ -109,19 +111,17 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
   };
   
   const reactionIcons = {
-    like: <ThumbsUp className="h-3 w-3 mr-1" />,
-    love: <Heart className="h-3 w-3 mr-1" />,
-    wow: <AlertCircle className="h-3 w-3 mr-1" />,
-    sad: <Frown className="h-3 w-3 mr-1" />,
-    angry: <Frown className="h-3 w-3 mr-1 rotate-180" />
+    'felt_that': <Heart className="h-3 w-3 mr-1" />,
+    'mind_blown': <AlertCircle className="h-3 w-3 mr-1" />,
+    'still_thinking': <Frown className="h-3 w-3 mr-1" />,
+    'changed_me': <ThumbsUp className="h-3 w-3 mr-1 rotate-180" />
   };
 
   const reactions = Object.entries(reply.reactions || {
-    like: 0,
-    love: 0,
-    wow: 0,
-    sad: 0,
-    angry: 0
+    felt_that: 0,
+    mind_blown: 0,
+    still_thinking: 0,
+    changed_me: 0
   })
     .filter(([_, count]) => count > 0)
     .map(([type, count]) => ({
@@ -129,7 +129,8 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
       count
     }));
 
-  const indentationClasses = [
+  // Define a set of colors for the spiral levels
+  const spiralColors = [
     "border-l-emerald",
     "border-l-lavender",
     "border-l-cafe",
@@ -137,13 +138,28 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
     "border-l-lavender/70"
   ];
   
-  const borderColorClass = indentationClasses[level % indentationClasses.length];
+  // Get the spiral color class based on the nesting level
+  const spiralColorClass = spiralColors[level % spiralColors.length];
 
   return (
-    <div className={cn(
-      "pl-4 ml-2",
-      level > 0 && `border-l-2 ${borderColorClass}`
-    )}>
+    <div 
+      className={cn(
+        "pl-4 relative",
+        level > 0 && `ml-2 border-l-2 ${spiralColorClass}`,
+        level > 0 && "spiral-thread"
+      )}
+    >
+      {level > 0 && (
+        <div 
+          className={`absolute w-4 h-4 rounded-full -left-[0.35rem] top-6 bg-${spiralColorClass.replace('border-l-', '')}`}
+          style={{ 
+            backgroundColor: level % 3 === 0 ? 'rgb(var(--emerald))' : 
+                             level % 3 === 1 ? 'rgb(var(--lavender))' : 
+                             'rgb(var(--cafe))'
+          }}
+        />
+      )}
+      
       <div className="my-4">
         {/* Author info */}
         <div className="flex items-center mb-2">
@@ -168,6 +184,15 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
           </div>
         </div>
         
+        {/* Spiral name if this is a top level reply */}
+        {level === 0 && spiralName && (
+          <div className="mb-2">
+            <span className="text-xs font-medium bg-lavender/10 text-lavender px-2 py-1 rounded-full">
+              {spiralName}
+            </span>
+          </div>
+        )}
+        
         {/* Reply content */}
         <div className="mt-1 text-sm text-foreground/90 whitespace-pre-line">
           {reply.content}
@@ -189,14 +214,14 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
               ))
             ) : (
               <>
-                <button onClick={() => handleReaction('like')} className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-full">
-                  <ThumbsUp className="h-3 w-3 mr-1" />
-                  Like
+                <button onClick={() => handleReaction('felt_that')} className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-full">
+                  <Heart className="h-3 w-3 mr-1" />
+                  Felt that
                 </button>
                 
-                <button onClick={() => handleReaction('love')} className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-full">
-                  <Heart className="h-3 w-3 mr-1" />
-                  Love
+                <button onClick={() => handleReaction('mind_blown')} className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-full">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Mind blown
                 </button>
               </>
             )}
@@ -207,7 +232,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
             onClick={() => setShowReplyForm(!showReplyForm)}
           >
             <MessageSquare className="h-3 w-3 mr-1" />
-            Reply
+            Continue spiral
           </button>
         </div>
         
@@ -216,7 +241,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
           <div className="mt-4">
             <form onSubmit={handleSubmitReply}>
               <Textarea
-                placeholder="Write your reply..."
+                placeholder="Continue the spiral..."
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
                 className="min-h-[100px] text-sm"
@@ -237,7 +262,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
                   size="sm"
                   disabled={submitting || !replyContent.trim()}
                 >
-                  {submitting ? 'Posting...' : 'Post Reply'}
+                  {submitting ? 'Posting...' : 'Add to spiral'}
                 </Button>
               </div>
             </form>
@@ -245,9 +270,9 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
         )}
       </div>
       
-      {/* Nested replies */}
+      {/* Nested replies - the spiral continues */}
       {hasNestedReplies && expanded && level < maxLevel && (
-        <div className="mt-1">
+        <div className="mt-1 spiral-content">
           {nestedReplies.map(nestedReply => (
             <ReplyCard 
               key={nestedReply.id} 
@@ -266,7 +291,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
           className="text-xs font-medium text-primary hover:underline mt-1"
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? "Hide replies" : `Show ${nestedReplies.length} replies`}
+          {expanded ? "Collapse spiral" : `Continue spiral (${nestedReplies.length})`}
         </button>
       )}
       
@@ -274,7 +299,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
       {hasNestedReplies && level >= maxLevel && (
         <div className="mt-1 text-xs text-muted-foreground">
           <button className="text-primary hover:underline">
-            Continue this thread →
+            Spiral continues →
           </button>
         </div>
       )}

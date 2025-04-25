@@ -23,11 +23,11 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 top-16 z-50 bg-[#1A1F2C] animate-in slide-in-from-top-5">
+    <div className="fixed inset-0 top-16 z-50 bg-[#1A1F2C]/95 backdrop-blur-sm animate-in slide-in-from-top-5">
       <div className="container py-6 space-y-4">
         <Link 
           to="/" 
-          className="flex items-center p-4 rounded-lg bg-white/5 hover:bg-white/10 text-white/90"
+          className="flex items-center p-4 rounded-lg bg-black/20 hover:bg-black/30 text-white/90"
           onClick={onClose}
         >
           <Home className="h-5 w-5 mr-4 shrink-0" />
@@ -35,7 +35,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         </Link>
         <Link 
           to="/discover" 
-          className="flex items-center p-4 rounded-lg bg-white/5 hover:bg-white/10 text-white/90"
+          className="flex items-center p-4 rounded-lg bg-black/20 hover:bg-black/30 text-white/90"
           onClick={onClose}
         >
           <Search className="h-5 w-5 mr-4 shrink-0" />
@@ -43,7 +43,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         </Link>
         <Link 
           to="/notifications" 
-          className="flex items-center p-4 rounded-lg bg-white/5 hover:bg-white/10 text-white/90"
+          className="flex items-center p-4 rounded-lg bg-black/20 hover:bg-black/30 text-white/90"
           onClick={onClose}
         >
           <Bell className="h-5 w-5 mr-4 shrink-0" />
@@ -54,13 +54,13 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
           <>
             <Link 
               to="/profile" 
-              className="flex items-center p-4 rounded-lg bg-white/5 hover:bg-white/10 text-white/90"
+              className="flex items-center p-4 rounded-lg bg-black/20 hover:bg-black/30 text-white/90"
               onClick={onClose}
             >
               <User className="h-5 w-5 mr-4 shrink-0" />
               <span className="text-base font-medium truncate">Profile</span>
             </Link>
-            <div className="pt-4 mt-4 border-t border-white/10">
+            <div className="pt-4 mt-4 border-t border-white/20">
               <CustomButton 
                 variant="accent" 
                 className="w-full justify-center py-6"
@@ -74,7 +74,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
             </div>
           </>
         ) : (
-          <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
+          <div className="pt-4 mt-4 border-t border-white/20 space-y-3">
             <CustomButton 
               variant="outline"
               className="w-full justify-center py-6"
