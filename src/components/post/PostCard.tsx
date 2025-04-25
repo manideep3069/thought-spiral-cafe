@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Post, User, ReactionType } from "@/types";
 import { getUserById } from "@/data/mockData";
@@ -23,7 +22,6 @@ export const PostCard: React.FC<PostCardProps> = ({
   onViewThread 
 }) => {
   const author = getUserById(post.authorId);
-  // Initialize with default values if post.reactions is undefined
   const defaultReactions = {
     felt_that: 0,
     mind_blown: 0,
@@ -47,7 +45,6 @@ export const PostCard: React.FC<PostCardProps> = ({
   
   const handleReaction = async (type: ReactionType) => {
     try {
-      // Optimistic UI update - animate and increment immediately
       setIsAnimating(prev => ({ ...prev, [type]: true }));
       setActiveReactions(prev => ({ ...prev, [type]: !prev[type] }));
       
@@ -60,37 +57,34 @@ export const PostCard: React.FC<PostCardProps> = ({
         [type]: newCount < 0 ? 0 : newCount
       }));
       
-      // Clear animation after 300ms
       setTimeout(() => {
         setIsAnimating(prev => ({ ...prev, [type]: false }));
       }, 300);
 
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // Fix: Pass a single object rather than an array to upsert
         const { error } = await supabase
           .from('post_reactions')
           .upsert(
             { 
               post_id: post.id, 
               user_id: user.id,
-              reaction_type: type // This type needs to match what's in the database
+              reaction_type: type
             },
             { onConflict: 'post_id,user_id,reaction_type' }
           );
         
         if (error) {
           console.log(`Reaction error: ${error.message}`);
-          // Silently fail, since we've already updated UI optimistically
+          toast.error("Error reacting to post");
         }
       }
       
       console.log(`Reacted with ${type} to post ${post.id}`);
     } catch (err) {
       console.error("Error handling reaction:", err);
-      // Don't revert UI since that would be jarring
+      toast.error("Error reacting to post");
     }
   };
   
@@ -126,10 +120,8 @@ export const PostCard: React.FC<PostCardProps> = ({
     podcast: <Mic className="h-4 w-4 mr-1 text-green-500" />
   };
 
-  // Check if post is scheduled and not released yet
   const isScheduledAndNotReleased = post.isScheduled && !post.openToDiscussion;
 
-  // Safely create reactions array, handling potential undefined values
   const reactions = postReactions 
     ? Object.entries(postReactions)
       .filter(([_, count]) => count > 0)
@@ -149,7 +141,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
-  // Get release condition text
   const getReleaseConditionText = () => {
     if (!post.releaseCondition) return null;
     
@@ -164,7 +155,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     return "Scheduled for future release";
   };
 
-  // Early return with a default UI if post is malformed to prevent errors
   if (!post || !post.id) {
     return (
       <article className="bg-card rounded-2xl p-6 shadow-md border border-border">
@@ -173,7 +163,6 @@ export const PostCard: React.FC<PostCardProps> = ({
     );
   }
 
-  // Current page URL for sharing
   const shareUrl = `${window.location.origin}/thread/${post.id}`;
 
   return (
@@ -268,7 +257,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           <button 
             onClick={() => handleReaction('felt_that')}
             className={cn(
-              "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
+              "inline-flex items-center whitespace-nowrap text-xs px-2 py-1 rounded-full border transition-all duration-200",
               activeReactions.felt_that ? "bg-red-500/10 font-medium border-red-500/30" : "border-border hover:bg-muted/50",
               reactionColors.felt_that,
               isAnimating.felt_that && "animate-[scale-in_0.2s_ease-out]"
@@ -280,7 +269,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           <button 
             onClick={() => handleReaction('mind_blown')}
             className={cn(
-              "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
+              "inline-flex items-center whitespace-nowrap text-xs px-2 py-1 rounded-full border transition-all duration-200",
               activeReactions.mind_blown ? "bg-purple-500/10 font-medium border-purple-500/30" : "border-border hover:bg-muted/50",
               reactionColors.mind_blown,
               isAnimating.mind_blown && "animate-[scale-in_0.2s_ease-out]"
@@ -292,7 +281,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           <button 
             onClick={() => handleReaction('still_thinking')}
             className={cn(
-              "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
+              "inline-flex items-center whitespace-nowrap text-xs px-2 py-1 rounded-full border transition-all duration-200",
               activeReactions.still_thinking ? "bg-blue-500/10 font-medium border-blue-500/30" : "border-border hover:bg-muted/50",
               reactionColors.still_thinking,
               isAnimating.still_thinking && "animate-[scale-in_0.2s_ease-out]"
@@ -304,7 +293,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           <button 
             onClick={() => handleReaction('changed_me')}
             className={cn(
-              "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
+              "inline-flex items-center whitespace-nowrap text-xs px-2 py-1 rounded-full border transition-all duration-200",
               activeReactions.changed_me ? "bg-emerald-500/10 font-medium border-emerald-500/30" : "border-border hover:bg-muted/50",
               reactionColors.changed_me,
               isAnimating.changed_me && "animate-[scale-in_0.2s_ease-out]"
@@ -330,7 +319,6 @@ export const PostCard: React.FC<PostCardProps> = ({
         </div>
       </div>
       
-      {/* Scheduled release info at bottom */}
       {isScheduledAndNotReleased && post.releaseCondition?.requiredReplies && (
         <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground flex items-center">
           <AlertCircle className="h-3 w-3 mr-1" />

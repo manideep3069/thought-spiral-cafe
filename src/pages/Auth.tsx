@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { OTPVerification } from '@/components/ui/otp-verification';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -17,9 +17,10 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
 
   useEffect(() => {
-    // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate('/');
@@ -27,7 +28,6 @@ const Auth = () => {
     });
   }, [navigate]);
 
-  // Google Sign In (existing users)
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
@@ -45,7 +45,6 @@ const Auth = () => {
         });
         console.error('Error signing in with Google:', error.message);
       }
-      // Successful redirect handled by Supabase
     } catch (error) {
       console.error('Error during Google sign-in:', error);
       toast({
@@ -58,7 +57,6 @@ const Auth = () => {
     }
   };
 
-  // Google Sign Up (new users) - uses same endpoint as signIn, but label distinguishes intent
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     try {
@@ -96,40 +94,39 @@ const Auth = () => {
       let result;
 
       if (isSignUp) {
-        // Sign up with email
         result = await supabase.auth.signUp({
           email,
           password,
         });
+        
+        if (result.error) {
+          toast({
+            title: "Sign Up Error",
+            description: result.error.message,
+            variant: "destructive"
+          });
+        } else {
+          setVerificationEmail(email);
+          setShowOTP(true);
+          toast({
+            title: "Verification code sent",
+            description: "Please check your email for the verification code",
+          });
+        }
       } else {
-        // Sign in with email
         result = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-      }
-
-      if (result.error) {
-        toast({
-          title: "Authentication Error",
-          description: result.error.message,
-          variant: "destructive"
-        });
-        console.error('Auth error:', result.error.message);
-      } else {
-        if (isSignUp && result.data?.user && !result.data.session) {
+        
+        if (result.error) {
           toast({
-            title: "Verification email sent",
-            description: "Please check your email to confirm your account",
+            title: "Sign In Error",
+            description: result.error.message,
+            variant: "destructive"
           });
-        } else if (result.data?.session) {
-          // If it's a new signup, redirect to profile edit page
-          if (isSignUp) {
-            navigate('/profile');
-          } else {
-            // For regular login, go to homepage
-            navigate('/');
-          }
+        } else if (result.data.session) {
+          navigate('/');
         }
       }
     } catch (error) {
@@ -142,6 +139,10 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleVerificationComplete = () => {
+    navigate('/');
   };
 
   return (
@@ -157,80 +158,87 @@ const Auth = () => {
             </p>
           </div>
 
-          <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="your@email.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="••••••••" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <CustomButton 
-              type="submit" 
-              className="w-full justify-center" 
-              isLoading={isLoading}
-            >
-              {isSignUp ? 'Sign Up' : 'Sign In'}
-            </CustomButton>
-          </form>
+          {showOTP ? (
+            <OTPVerification
+              email={verificationEmail}
+              onVerificationComplete={handleVerificationComplete}
+            />
+          ) : (
+            <>
+              <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="your@email.com" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="••••••••" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <CustomButton 
+                  type="submit" 
+                  className="w-full justify-center" 
+                  isLoading={isLoading}
+                >
+                  {isSignUp ? 'Sign Up' : 'Sign In'}
+                </CustomButton>
+              </form>
 
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
 
-          <div className="space-y-3">
-            {/* Sign in with Google */}
-            <CustomButton
-              variant="outline"
-              className="w-full justify-center"
-              onClick={handleGoogleSignIn}
-              isLoading={googleLoading}
-              disabled={googleLoading}
-            >
-              <span className="mr-2">Sign in with Google</span>
-            </CustomButton>
-            {/* Sign up with Google */}
-            <CustomButton
-              variant="accent"
-              className="w-full justify-center"
-              onClick={handleGoogleSignUp}
-              isLoading={googleLoading}
-              disabled={googleLoading}
-            >
-              <span className="mr-2">Sign up with Google</span>
-            </CustomButton>
-            <div className="text-center text-sm">
-              <button 
-                type="button"
-                className="text-primary hover:underline"
-                onClick={() => setIsSignUp(!isSignUp)}
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign In' 
-                  : 'Don\'t have an account? Sign Up'}
-              </button>
-            </div>
-          </div>
+              <div className="space-y-3">
+                <CustomButton
+                  variant="outline"
+                  className="w-full justify-center"
+                  onClick={handleGoogleSignIn}
+                  isLoading={googleLoading}
+                  disabled={googleLoading}
+                >
+                  <span className="mr-2">Sign in with Google</span>
+                </CustomButton>
+                <CustomButton
+                  variant="accent"
+                  className="w-full justify-center"
+                  onClick={handleGoogleSignUp}
+                  isLoading={googleLoading}
+                  disabled={googleLoading}
+                >
+                  <span className="mr-2">Sign up with Google</span>
+                </CustomButton>
+                <div className="text-center text-sm">
+                  <button 
+                    type="button"
+                    className="text-primary hover:underline"
+                    onClick={() => setIsSignUp(!isSignUp)}
+                  >
+                    {isSignUp 
+                      ? 'Already have an account? Sign In' 
+                      : 'Don\'t have an account? Sign Up'}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </Card>
       </div>
     </Layout>
