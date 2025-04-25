@@ -70,10 +70,13 @@ const Home: React.FC = () => {
                     requiredReplies: parsedCondition.requiredReplies,
                     releaseDate: parsedCondition.releaseDate
                   };
-                } else {
+                } else if (typeof post.release_condition === 'object') {
+                  // Check if the object has the expected properties
+                  const condition = post.release_condition as Record<string, any>;
                   releaseCondition = {
-                    requiredReplies: post.release_condition.requiredReplies,
-                    releaseDate: post.release_condition.releaseDate
+                    requiredReplies: condition.requiredReplies !== undefined ? 
+                      Number(condition.requiredReplies) : undefined,
+                    releaseDate: condition.releaseDate || undefined
                   };
                 }
               } catch (e) {
