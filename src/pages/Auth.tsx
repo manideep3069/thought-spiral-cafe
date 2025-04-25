@@ -79,9 +79,13 @@ const Auth = () => {
       if (authMethod === 'email') {
         let result;
         if (isSignUp) {
+          console.log('Attempting email signup:', { email });
           result = await supabase.auth.signUp({
             email,
             password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`
+            }
           });
           
           if (result.error) {
@@ -119,9 +123,18 @@ const Auth = () => {
           }
         }
       } else {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: `${countryCode}${phone}`,
+        // Phone authentication
+        const fullPhone = `${countryCode}${phone}`;
+        console.log('Attempting phone verification:', { phone: fullPhone });
+        
+        const { error, data } = await supabase.auth.signInWithOtp({
+          phone: fullPhone,
+          options: {
+            shouldCreateUser: isSignUp,
+          }
         });
+
+        console.log('Phone OTP response:', { error, data });
 
         if (error) {
           toast({
@@ -130,7 +143,7 @@ const Auth = () => {
             variant: "destructive"
           });
         } else {
-          setVerificationPhone(`${countryCode}${phone}`);
+          setVerificationPhone(fullPhone);
           setShowOTP(true);
           toast({
             title: "Secret Code Sent",

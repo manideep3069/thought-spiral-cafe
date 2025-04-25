@@ -40,14 +40,16 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
       let result;
       
       if (phone) {
-        // Phone verification uses different parameters
+        // Phone verification
+        console.log('Verifying phone OTP:', { phone, token: otp });
         result = await supabase.auth.verifyOtp({
           phone,
           token: otp,
           type: 'sms',
         });
       } else if (email) {
-        // Email verification uses different parameters
+        // Email verification
+        console.log('Verifying email OTP:', { email, token: otp });
         result = await supabase.auth.verifyOtp({
           email,
           token: otp,
@@ -57,11 +59,11 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
 
       if (result?.error) {
         toast({
-          title: "Hmm… that code's already wandered off.",
-          description: "Try again. Or ask the café nicely.",
+          title: "Verification failed",
+          description: result.error.message,
           variant: "destructive"
         });
-        console.error('Verification error:', result.error);
+        console.error('Verification error details:', result.error);
       } else {
         toast({
           title: "Success",
