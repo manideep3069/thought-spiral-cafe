@@ -11,12 +11,14 @@ import { Label } from '@/components/ui/label';
 import { CustomButton } from '@/components/ui/custom-button';
 
 interface OTPVerificationProps {
-  email: string;
+  email?: string;
+  phone?: string;
   onVerificationComplete: () => void;
 }
 
 export const OTPVerification: React.FC<OTPVerificationProps> = ({
   email,
+  phone,
   onVerificationComplete
 }) => {
   const [otp, setOtp] = useState('');
@@ -26,7 +28,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
   const handleVerify = async () => {
     if (otp.length !== 6) {
       toast({
-        title: "Invalid OTP",
+        title: "Invalid Code",
         description: "Please enter a 6-digit code",
         variant: "destructive"
       });
@@ -36,21 +38,22 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.verifyOtp({
-        email,
+        phone: phone,
         token: otp,
-        type: 'email'
+        type: phone ? 'sms' : 'email',
+        email: email,
       });
 
       if (error) {
         toast({
-          title: "Verification Failed",
-          description: error.message,
+          title: "Hmm… that code's already wandered off.",
+          description: "Try again. Or ask the café nicely.",
           variant: "destructive"
         });
       } else {
         toast({
           title: "Success",
-          description: "Email verified successfully",
+          description: phone ? "Phone verified successfully" : "Email verified successfully",
         });
         onVerificationComplete();
       }
@@ -58,7 +61,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
       console.error('Verification error:', error);
       toast({
         title: "Error",
-        description: "Failed to verify email",
+        description: "Failed to verify code",
         variant: "destructive"
       });
     } finally {
@@ -71,7 +74,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
       <div className="space-y-2">
         <Label>Enter verification code</Label>
         <p className="text-sm text-muted-foreground">
-          We've sent a code to {email}
+          {phone ? "Let the café find your number..." : `We've sent a code to ${email}`}
         </p>
         <InputOTP
           value={otp}
@@ -91,7 +94,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
         className="w-full"
         isLoading={isLoading}
       >
-        Verify Email
+        {isLoading ? "Verifying..." : "Verify Code"}
       </CustomButton>
     </div>
   );

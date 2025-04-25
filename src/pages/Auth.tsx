@@ -8,17 +8,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { OTPVerification } from '@/components/auth/OTPVerification';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
+  const [verificationPhone, setVerificationPhone] = useState('');
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -91,42 +95,66 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      let result;
-
-      if (isSignUp) {
-        result = await supabase.auth.signUp({
-          email,
-          password,
+      if (authMethod === 'email') {
+        let result;
+        if (isSignUp) {
+          result = await supabase.auth.signUp({
+            email,
+            password,
+          });
+          
+          if (result.error) {
+            toast({
+              title: "Sign Up Error",
+              description: result.error.message,
+              variant: "destructive"
+            });
+          } else {
+            setVerificationEmail(email);
+            setShowOTP(true);
+            toast({
+              title: "Your spiral begins here.",
+              description: "Please check your email for the verification code",
+            });
+          }
+        } else {
+          result = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          
+          if (result.error) {
+            toast({
+              title: "Sign In Error",
+              description: result.error.message,
+              variant: "destructive"
+            });
+          } else if (result.data.session) {
+            toast({
+              title: "Welcome back, Wanderer.",
+              description: "You've successfully signed in",
+            });
+            navigate('/');
+          }
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: phone.startsWith('+') ? phone : `+${phone}`,
         });
-        
-        if (result.error) {
+
+        if (error) {
           toast({
-            title: "Sign Up Error",
-            description: result.error.message,
+            title: "Error",
+            description: error.message,
             variant: "destructive"
           });
         } else {
-          setVerificationEmail(email);
+          setVerificationPhone(phone);
           setShowOTP(true);
           toast({
-            title: "Verification code sent",
-            description: "Please check your email for the verification code",
+            title: "Secret Code Sent",
+            description: "Check your phone for the verification code",
           });
-        }
-      } else {
-        result = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        
-        if (result.error) {
-          toast({
-            title: "Sign In Error",
-            description: result.error.message,
-            variant: "destructive"
-          });
-        } else if (result.data.session) {
-          navigate('/');
         }
       }
     } catch (error) {
@@ -154,48 +182,88 @@ const Auth = () => {
               Welcome to GnL café
             </h1>
             <p className="text-muted-foreground">
-              Join our community of thinkers and explorers
+              {isSignUp ? "Your spiral begins here." : "Welcome back, Wanderer"}
             </p>
           </div>
 
           {showOTP ? (
             <OTPVerification
               email={verificationEmail}
+              phone={verificationPhone}
               onVerificationComplete={handleVerificationComplete}
             />
           ) : (
             <>
-              <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="your@email.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="••••••••" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <CustomButton 
-                  type="submit" 
-                  className="w-full justify-center" 
-                  isLoading={isLoading}
-                >
-                  {isSignUp ? 'Sign Up' : 'Sign In'}
-                </CustomButton>
-              </form>
+              <Tabs defaultValue="email" className="mb-6" onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="email">Email</TabsTrigger>
+                  <TabsTrigger value="phone">Phone</TabsTrigger>
+                </TabsList>
+                <TabsContent value="email">
+                  <form onSubmit={handleEmailAuth} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="your@email.com" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <CustomButton 
+                      type="submit" 
+                      className="w-full justify-center" 
+                      isLoading={isLoading}
+                    >
+                      {isSignUp ? 'Sign Up' : 'Sign In'}
+                    </CustomButton>
+                  </form>
+                </TabsContent>
+                <TabsContent value="phone">
+                  <form onSubmit={handleEmailAuth} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          type="tel" 
+                          placeholder="+91" 
+                          className="w-20"
+                          value="+91"
+                          readOnly
+                        />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="Your phone number"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <CustomButton 
+                      type="submit" 
+                      className="w-full justify-center" 
+                      isLoading={isLoading}
+                    >
+                      Get Secret Code 🔐
+                    </CustomButton>
+                  </form>
+                </TabsContent>
+              </Tabs>
 
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
@@ -232,8 +300,8 @@ const Auth = () => {
                     onClick={() => setIsSignUp(!isSignUp)}
                   >
                     {isSignUp 
-                      ? 'Already have an account? Sign In' 
-                      : 'Don\'t have an account? Sign Up'}
+                      ? 'Already wandered in? Sign In' 
+                      : 'First time here? Sign Up'}
                   </button>
                 </div>
               </div>
