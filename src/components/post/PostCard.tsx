@@ -5,10 +5,11 @@ import { getUserById } from "@/data/mockData";
 import { CustomButton } from "@/components/ui/custom-button";
 import { Tag } from "@/components/ui/tag";
 import { format, isValid } from "date-fns";
-import { Heart, MessageSquare, Share2, ThumbsUp, Frown, AlertCircle, Book, Music, Film, Mic } from "lucide-react";
+import { Heart, MessageSquare, Share2, ThumbsUp, Frown, AlertCircle, Book, Music, Film, Mic, Brain, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ShareDialog } from "@/components/share/ShareDialog";
 
 interface PostCardProps {
   post: Post;
@@ -24,27 +25,24 @@ export const PostCard: React.FC<PostCardProps> = ({
   const author = getUserById(post.authorId);
   // Initialize with default values if post.reactions is undefined
   const defaultReactions = {
-    like: 0,
-    love: 0,
-    wow: 0,
-    sad: 0,
-    angry: 0
+    felt_that: 0,
+    mind_blown: 0,
+    still_thinking: 0,
+    changed_me: 0
   };
   
   const [postReactions, setPostReactions] = useState(post.reactions || defaultReactions);
   const [activeReactions, setActiveReactions] = useState<Record<ReactionType, boolean>>({
-    like: false,
-    love: false,
-    wow: false,
-    sad: false,
-    angry: false
+    felt_that: false,
+    mind_blown: false,
+    still_thinking: false,
+    changed_me: false
   });
   const [isAnimating, setIsAnimating] = useState<Record<ReactionType, boolean>>({
-    like: false,
-    love: false,
-    wow: false,
-    sad: false,
-    angry: false
+    felt_that: false,
+    mind_blown: false,
+    still_thinking: false,
+    changed_me: false
   });
   
   const handleReaction = async (type: ReactionType) => {
@@ -101,19 +99,24 @@ export const PostCard: React.FC<PostCardProps> = ({
   };
   
   const reactionIcons = {
-    like: <ThumbsUp className="h-4 w-4 mr-1" />,
-    love: <Heart className="h-4 w-4 mr-1" />,
-    wow: <AlertCircle className="h-4 w-4 mr-1" />,
-    sad: <Frown className="h-4 w-4 mr-1" />,
-    angry: <Frown className="h-4 w-4 mr-1 rotate-180" />
+    felt_that: <Heart className="h-4 w-4 mr-1" />,
+    mind_blown: <Brain className="h-4 w-4 mr-1" />,
+    still_thinking: <Clock className="h-4 w-4 mr-1" />,
+    changed_me: <Sparkles className="h-4 w-4 mr-1" />
+  };
+
+  const reactionLabels = {
+    felt_that: "Felt that",
+    mind_blown: "Mind blown",
+    still_thinking: "Still thinking about this...",
+    changed_me: "Changed me a little"
   };
 
   const reactionColors = {
-    like: "text-primary hover:text-primary/80", 
-    love: "text-red-500 hover:text-red-400",
-    wow: "text-amber-500 hover:text-amber-400",
-    sad: "text-blue-500 hover:text-blue-400",
-    angry: "text-orange-600 hover:text-orange-500"
+    felt_that: "text-red-500 hover:text-red-400", 
+    mind_blown: "text-purple-500 hover:text-purple-400",
+    still_thinking: "text-blue-500 hover:text-blue-400",
+    changed_me: "text-emerald-500 hover:text-emerald-400"
   };
 
   const mediaTypeIcons: Record<string, React.ReactNode> = {
@@ -122,6 +125,9 @@ export const PostCard: React.FC<PostCardProps> = ({
     movie: <Film className="h-4 w-4 mr-1 text-red-500" />,
     podcast: <Mic className="h-4 w-4 mr-1 text-green-500" />
   };
+
+  // Check if post is scheduled and not released yet
+  const isScheduledAndNotReleased = post.isScheduled && !post.openToDiscussion;
 
   // Safely create reactions array, handling potential undefined values
   const reactions = postReactions 
@@ -143,6 +149,21 @@ export const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
+  // Get release condition text
+  const getReleaseConditionText = () => {
+    if (!post.releaseCondition) return null;
+    
+    if (post.releaseCondition.releaseDate) {
+      return `Will be released on ${formatDate(post.releaseCondition.releaseDate)}`;
+    }
+    
+    if (post.releaseCondition.requiredReplies) {
+      return `Will be released after ${post.releaseCondition.requiredReplies} replies`;
+    }
+    
+    return "Scheduled for future release";
+  };
+
   // Early return with a default UI if post is malformed to prevent errors
   if (!post || !post.id) {
     return (
@@ -152,10 +173,14 @@ export const PostCard: React.FC<PostCardProps> = ({
     );
   }
 
+  // Current page URL for sharing
+  const shareUrl = `${window.location.origin}/thread/${post.id}`;
+
   return (
     <article className={cn(
       "bg-card rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow border border-border",
-      compact ? "max-w-2xl" : "w-full"
+      compact ? "max-w-2xl" : "w-full",
+      isScheduledAndNotReleased ? "opacity-75" : ""
     )}>
       <div className="flex items-center mb-4">
         <div className="h-10 w-10 rounded-full bg-lavender/20 flex items-center justify-center overflow-hidden">
@@ -178,6 +203,15 @@ export const PostCard: React.FC<PostCardProps> = ({
           </p>
         </div>
       </div>
+      
+      {isScheduledAndNotReleased && (
+        <div className="mb-3 py-2 px-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
+          <p className="text-sm flex items-center text-amber-600">
+            <Clock className="h-4 w-4 mr-2" />
+            {getReleaseConditionText()}
+          </p>
+        </div>
+      )}
       
       <h3 className="text-xl font-serif font-semibold mb-2">{post.title}</h3>
       
@@ -232,52 +266,52 @@ export const PostCard: React.FC<PostCardProps> = ({
       <div className="flex justify-between items-center mt-6">
         <div className="flex flex-wrap gap-2">
           <button 
-            onClick={() => handleReaction('like')}
+            onClick={() => handleReaction('felt_that')}
             className={cn(
               "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
-              activeReactions.like ? "bg-primary/10 font-medium border-primary/30" : "border-border hover:bg-muted/50",
-              reactionColors.like,
-              isAnimating.like && "animate-[scale-in_0.2s_ease-out]"
+              activeReactions.felt_that ? "bg-red-500/10 font-medium border-red-500/30" : "border-border hover:bg-muted/50",
+              reactionColors.felt_that,
+              isAnimating.felt_that && "animate-[scale-in_0.2s_ease-out]"
             )}
           >
-            {reactionIcons.like}
-            {postReactions.like > 0 ? postReactions.like : "Like"}
+            {reactionIcons.felt_that}
+            {postReactions.felt_that > 0 ? postReactions.felt_that : reactionLabels.felt_that}
           </button>
           <button 
-            onClick={() => handleReaction('love')}
+            onClick={() => handleReaction('mind_blown')}
             className={cn(
               "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
-              activeReactions.love ? "bg-red-500/10 font-medium border-red-500/30" : "border-border hover:bg-muted/50",
-              reactionColors.love,
-              isAnimating.love && "animate-[scale-in_0.2s_ease-out]"
+              activeReactions.mind_blown ? "bg-purple-500/10 font-medium border-purple-500/30" : "border-border hover:bg-muted/50",
+              reactionColors.mind_blown,
+              isAnimating.mind_blown && "animate-[scale-in_0.2s_ease-out]"
             )}
           >
-            {reactionIcons.love}
-            {postReactions.love > 0 ? postReactions.love : "Love"}
+            {reactionIcons.mind_blown}
+            {postReactions.mind_blown > 0 ? postReactions.mind_blown : reactionLabels.mind_blown}
           </button>
           <button 
-            onClick={() => handleReaction('wow')}
+            onClick={() => handleReaction('still_thinking')}
             className={cn(
               "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
-              activeReactions.wow ? "bg-amber-500/10 font-medium border-amber-500/30" : "border-border hover:bg-muted/50",
-              reactionColors.wow,
-              isAnimating.wow && "animate-[scale-in_0.2s_ease-out]"
+              activeReactions.still_thinking ? "bg-blue-500/10 font-medium border-blue-500/30" : "border-border hover:bg-muted/50",
+              reactionColors.still_thinking,
+              isAnimating.still_thinking && "animate-[scale-in_0.2s_ease-out]"
             )}
           >
-            {reactionIcons.wow}
-            {postReactions.wow > 0 ? postReactions.wow : "Wow"}
+            {reactionIcons.still_thinking}
+            {postReactions.still_thinking > 0 ? postReactions.still_thinking : "Still thinking..."}
           </button>
           <button 
-            onClick={() => handleReaction('sad')}
+            onClick={() => handleReaction('changed_me')}
             className={cn(
               "inline-flex items-center text-xs px-2 py-1 rounded-full border transition-all duration-200",
-              activeReactions.sad ? "bg-blue-500/10 font-medium border-blue-500/30" : "border-border hover:bg-muted/50",
-              reactionColors.sad,
-              isAnimating.sad && "animate-[scale-in_0.2s_ease-out]"
+              activeReactions.changed_me ? "bg-emerald-500/10 font-medium border-emerald-500/30" : "border-border hover:bg-muted/50",
+              reactionColors.changed_me,
+              isAnimating.changed_me && "animate-[scale-in_0.2s_ease-out]"
             )}
           >
-            {reactionIcons.sad}
-            {postReactions.sad > 0 ? postReactions.sad : "Sad"}
+            {reactionIcons.changed_me}
+            {postReactions.changed_me > 0 ? postReactions.changed_me : "Changed me"}
           </button>
         </div>
         
@@ -292,14 +326,17 @@ export const PostCard: React.FC<PostCardProps> = ({
             {compact ? "View Thread" : "Open to Discussion"}
           </CustomButton>
           
-          <CustomButton 
-            variant="ghost" 
-            size="sm"
-          >
-            <Share2 className="h-4 w-4" />
-          </CustomButton>
+          <ShareDialog title={post.title} url={shareUrl} />
         </div>
       </div>
+      
+      {/* Scheduled release info at bottom */}
+      {isScheduledAndNotReleased && post.releaseCondition?.requiredReplies && (
+        <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground flex items-center">
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Replies progress: 0/{post.releaseCondition.requiredReplies}
+        </div>
+      )}
     </article>
   );
 };

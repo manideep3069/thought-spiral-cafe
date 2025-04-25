@@ -129,8 +129,11 @@ export type Database = {
           created_at: string | null
           id: string
           is_open_for_discussion: boolean | null
+          is_scheduled: boolean | null
           media_title: string | null
           media_type: string | null
+          release_at: string | null
+          release_condition: Json | null
           user_id: string
         }
         Insert: {
@@ -138,8 +141,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_open_for_discussion?: boolean | null
+          is_scheduled?: boolean | null
           media_title?: string | null
           media_type?: string | null
+          release_at?: string | null
+          release_condition?: Json | null
           user_id?: string
         }
         Update: {
@@ -147,8 +153,11 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_open_for_discussion?: boolean | null
+          is_scheduled?: boolean | null
           media_title?: string | null
           media_type?: string | null
+          release_at?: string | null
+          release_condition?: Json | null
           user_id?: string
         }
         Relationships: []
@@ -277,7 +286,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      should_release_post: {
+        Args: { post_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -27,11 +27,16 @@ export interface Post {
   tags: string[];
   createdAt: string;
   reactions: {
-    like: number;
-    love: number;
-    wow: number;
-    sad: number;
-    angry: number;
+    felt_that: number;
+    mind_blown: number;
+    still_thinking: number;
+    changed_me: number;
+  };
+  isScheduled?: boolean;
+  releaseAt?: string;
+  releaseCondition?: {
+    requiredReplies?: number;
+    releaseDate?: string;
   };
 }
 
@@ -43,15 +48,14 @@ export interface Reply {
   parentReplyId?: string;
   createdAt: string;
   reactions: {
-    like: number;
-    love: number;
-    wow: number;
-    sad: number;
-    angry: number;
+    felt_that: number;
+    mind_blown: number;
+    still_thinking: number;
+    changed_me: number;
   };
 }
 
-export type ReactionType = 'like' | 'love' | 'wow' | 'sad' | 'angry';
+export type ReactionType = 'felt_that' | 'mind_blown' | 'still_thinking' | 'changed_me';
 
 export interface Notification {
   id: string;

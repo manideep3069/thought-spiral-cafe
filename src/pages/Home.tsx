@@ -5,7 +5,7 @@ import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
 import { Tag } from '@/components/ui/tag';
 import { mockPosts } from '@/data/mockData';
-import { Filter, TrendingUp, Book, Music, Film, Mic } from 'lucide-react';
+import { Filter, TrendingUp, Book, Music, Film, Mic, Clock } from 'lucide-react';
 import { CustomButton } from '@/components/ui/custom-button';
 import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types';
@@ -15,6 +15,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [activeMediaType, setActiveMediaType] = useState<string | null>(null);
+  const [showScheduled, setShowScheduled] = useState<boolean>(false);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const { toast } = useToast();
@@ -40,6 +41,11 @@ const Home: React.FC = () => {
           query = query.eq('media_type', activeMediaType);
         }
         
+        // Apply scheduled post filter
+        if (!showScheduled) {
+          query = query.or('is_scheduled.is.null,is_scheduled.eq.false');
+        }
+        
         const { data, error } = await query;
         
         if (error) {
@@ -63,9 +69,17 @@ const Home: React.FC = () => {
               title: post.media_title || ""
             },
             openToDiscussion: post.is_open_for_discussion || false,
+            isScheduled: post.is_scheduled || false,
+            releaseAt: post.release_at,
+            releaseCondition: post.release_condition,
             tags: [], // We'll need to add tags later when we implement them in the database
             createdAt: post.created_at || new Date().toISOString(),
-            reactions: { like: 0, love: 0, wow: 0, sad: 0, angry: 0 }
+            reactions: { 
+              felt_that: 0, 
+              mind_blown: 0, 
+              still_thinking: 0, 
+              changed_me: 0 
+            }
           }));
           setPosts(formattedPosts);
         } else {
@@ -79,7 +93,7 @@ const Home: React.FC = () => {
     }
     
     fetchPosts();
-  }, [activeMediaType, toast]);
+  }, [activeMediaType, showScheduled, toast]);
   
   const handleViewThread = (postId: string) => {
     navigate(`/thread/${postId}`);
@@ -133,13 +147,28 @@ const Home: React.FC = () => {
                   {media.name}
                 </CustomButton>
               ))}
-              {activeMediaType && (
+              
+              {/* Scheduled posts filter */}
+              <CustomButton 
+                variant={showScheduled ? "default" : "outline"}
+                size="sm"
+                className={`capitalize ${showScheduled ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500' : ''}`}
+                onClick={() => setShowScheduled(!showScheduled)}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                {showScheduled ? "Including scheduled" : "Show scheduled"}
+              </CustomButton>
+              
+              {(activeMediaType || showScheduled) && (
                 <CustomButton 
                   variant="ghost"
                   size="sm"
-                  onClick={() => setActiveMediaType(null)}
+                  onClick={() => {
+                    setActiveMediaType(null);
+                    setShowScheduled(false);
+                  }}
                 >
-                  Clear filter
+                  Clear filters
                 </CustomButton>
               )}
             </div>
@@ -196,13 +225,17 @@ const Home: React.FC = () => {
             ) : (
               <div className="text-center py-12">
                 <p className="text-lg text-muted-foreground">No thoughts found for this filter.</p>
-                {activeFilter && (
+                {(activeFilter || activeMediaType || showScheduled) && (
                   <CustomButton 
                     variant="link" 
-                    onClick={() => setActiveFilter(null)}
+                    onClick={() => {
+                      setActiveFilter(null);
+                      setActiveMediaType(null);
+                      setShowScheduled(false);
+                    }}
                     className="mt-2"
                   >
-                    Clear filter
+                    Clear all filters
                   </CustomButton>
                 )}
               </div>
@@ -246,7 +279,8 @@ const Home: React.FC = () => {
                     <h4 className="font-medium line-clamp-1">{post.title}</h4>
                     <p className="text-sm text-muted-foreground mt-1">
                       {(post.reactions ? 
-                        (post.reactions.like || 0) + (post.reactions.love || 0) : 0)} reactions
+                        (post.reactions.felt_that || 0) + (post.reactions.mind_blown || 0) +
+                        (post.reactions.still_thinking || 0) + (post.reactions.changed_me || 0) : 0)} reactions
                     </p>
                   </a>
                 </li>

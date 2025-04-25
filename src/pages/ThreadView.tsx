@@ -5,7 +5,7 @@ import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
 import { ReplyCard } from '@/components/post/ReplyCard';
 import { getPostById, getRepliesForPost } from '@/data/mockData';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Clock, LockIcon } from 'lucide-react';
 import { CustomButton } from '@/components/ui/custom-button';
 import { supabase } from '@/integrations/supabase/client';
 import { Post, Reply } from '@/types';
@@ -41,11 +41,10 @@ const ThreadView: React.FC = () => {
           parentReplyId: reply.parent_discussion_id,
           createdAt: reply.created_at,
           reactions: {
-            like: 0,
-            love: 0,
-            wow: 0,
-            sad: 0,
-            angry: 0
+            felt_that: 0,
+            mind_blown: 0,
+            still_thinking: 0,
+            changed_me: 0
           }
         }));
         setReplies(formattedReplies);
@@ -79,7 +78,7 @@ const ThreadView: React.FC = () => {
           // Ensure media_type is one of the expected types or default to "thought"
           const mediaType = supabasePost.media_type as "thought" | "book" | "movie" | "music" | "quote" | null;
           
-          setPost({
+          const formattedPost: Post = {
             id: supabasePost.id,
             title: supabasePost.media_title || 'Untitled',
             content: supabasePost.content || '',
@@ -92,13 +91,17 @@ const ThreadView: React.FC = () => {
             tags: [],
             createdAt: supabasePost.created_at,
             reactions: {
-              like: 0,
-              love: 0,
-              wow: 0,
-              sad: 0,
-              angry: 0
-            }
-          });
+              felt_that: 0,
+              mind_blown: 0,
+              still_thinking: 0,
+              changed_me: 0
+            },
+            isScheduled: supabasePost.is_scheduled || false,
+            releaseAt: supabasePost.release_at,
+            releaseCondition: supabasePost.release_condition
+          };
+          
+          setPost(formattedPost);
         } else {
           // Fallback to mock data
           const mockPost = getPostById(postId);
@@ -176,11 +179,10 @@ const ThreadView: React.FC = () => {
             parentReplyId: null,
             createdAt: new Date().toISOString(),
             reactions: {
-              like: 0,
-              love: 0,
-              wow: 0,
-              sad: 0,
-              angry: 0
+              felt_that: 0,
+              mind_blown: 0,
+              still_thinking: 0,
+              changed_me: 0
             }
           };
           
@@ -209,17 +211,31 @@ const ThreadView: React.FC = () => {
         parentReplyId: newReply[0].parent_discussion_id,
         createdAt: newReply[0].created_at,
         reactions: {
-          like: 0,
-          love: 0,
-          wow: 0,
-          sad: 0,
-          angry: 0
+          felt_that: 0,
+          mind_blown: 0,
+          still_thinking: 0,
+          changed_me: 0
         }
       };
       
       // Add to replies state
       setReplies(prevReplies => [formattedReply, ...prevReplies]);
       setReplyContent('');
+      
+      // Check if this post has a release condition based on reply count
+      if (post?.isScheduled && post.releaseCondition?.requiredReplies) {
+        if (replies.length + 1 >= post.releaseCondition.requiredReplies) {
+          // Optimistically update the UI first
+          setPost(prev => prev ? {
+            ...prev,
+            isScheduled: false,
+            openToDiscussion: true
+          } : null);
+          
+          toast.success("Your reply has unlocked this post!");
+        }
+      }
+      
       toast.success("Reply posted successfully");
     } catch (err) {
       console.error("Error:", err);
@@ -256,6 +272,14 @@ const ThreadView: React.FC = () => {
   // Get top level replies only
   const topLevelReplies = replies.filter(reply => !reply.parentReplyId);
   
+  // Check if post is scheduled and not yet released
+  const isScheduledAndNotReleased = post.isScheduled && !post.openToDiscussion;
+  
+  // Calculate progress for scheduled posts with required replies
+  const replyProgress = post.releaseCondition?.requiredReplies 
+    ? Math.min(Math.round((replies.length / post.releaseCondition.requiredReplies) * 100), 100)
+    : 0;
+  
   return (
     <Layout>
       <div className="max-w-4xl mx-auto">
@@ -270,27 +294,64 @@ const ThreadView: React.FC = () => {
         {/* Main post */}
         <PostCard post={post} />
         
-        {/* Reply form */}
+        {/* Reply form - only show if post is not scheduled or already released */}
         <div className="mt-8 mb-6">
           <h3 className="text-lg font-medium mb-4">Join the Discussion</h3>
-          <form onSubmit={handleSubmitReply}>
-            <textarea 
-              className="w-full p-4 rounded-2xl border border-border bg-card min-h-32 focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Share your thoughts..."
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              disabled={submitting}
-            />
-            <div className="mt-4 flex justify-end">
-              <CustomButton 
-                variant="accent" 
-                type="submit" 
-                disabled={submitting || !replyContent.trim()}
-              >
-                {submitting ? 'Posting...' : 'Post Reply'}
-              </CustomButton>
+          
+          {isScheduledAndNotReleased ? (
+            <div className="p-6 bg-card border border-border rounded-2xl">
+              <div className="flex items-center mb-4">
+                <LockIcon className="h-5 w-5 text-amber-500 mr-2" />
+                <h4 className="font-medium">This thought is scheduled for future release</h4>
+              </div>
+              
+              {post.releaseCondition?.requiredReplies && (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    This thought will be unlocked after {post.releaseCondition.requiredReplies} replies.
+                    Your contribution helps unlock the content!
+                  </p>
+                  
+                  <div className="w-full bg-muted rounded-full h-2.5">
+                    <div 
+                      className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out" 
+                      style={{ width: `${replyProgress}%` }}
+                    ></div>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground text-right">
+                    {replies.length} of {post.releaseCondition.requiredReplies} replies
+                  </p>
+                </div>
+              )}
+              
+              {post.releaseAt && (
+                <p className="text-sm text-muted-foreground flex items-center">
+                  <Clock className="h-4 w-4 mr-2" />
+                  This thought will be unlocked on {new Date(post.releaseAt).toLocaleDateString()}
+                </p>
+              )}
             </div>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmitReply}>
+              <textarea 
+                className="w-full p-4 rounded-2xl border border-border bg-card min-h-32 focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Share your thoughts..."
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                disabled={submitting}
+              />
+              <div className="mt-4 flex justify-end">
+                <CustomButton 
+                  variant="accent" 
+                  type="submit" 
+                  disabled={submitting || !replyContent.trim()}
+                >
+                  {submitting ? 'Posting...' : 'Post Reply'}
+                </CustomButton>
+              </div>
+            </form>
+          )}
         </div>
         
         {/* Replies */}
@@ -311,7 +372,11 @@ const ThreadView: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-8 bg-muted/30 rounded-2xl">
-              <p className="text-muted-foreground">No replies yet. Be the first to share your thoughts!</p>
+              <p className="text-muted-foreground">
+                {isScheduledAndNotReleased && post.releaseCondition?.requiredReplies
+                  ? "Be the first to help unlock this thought by replying!"
+                  : "No replies yet. Be the first to share your thoughts!"}
+              </p>
             </div>
           )}
         </div>
