@@ -59,28 +59,52 @@ const Home: React.FC = () => {
           setPosts(mockPosts);
         } else if (data && data.length > 0) {
           // Transform Supabase data to match Post type
-          const formattedPosts: Post[] = data.map(post => ({
-            id: post.id,
-            title: post.media_title || "Untitled",
-            content: post.content,
-            authorId: post.user_id,
-            mediaMetadata: {
-              type: post.media_type as 'book' | 'movie' | 'music' | 'quote' || 'thought',
-              title: post.media_title || ""
-            },
-            openToDiscussion: post.is_open_for_discussion || false,
-            isScheduled: post.is_scheduled || false,
-            releaseAt: post.release_at,
-            releaseCondition: post.release_condition,
-            tags: [], // We'll need to add tags later when we implement them in the database
-            createdAt: post.created_at || new Date().toISOString(),
-            reactions: { 
-              felt_that: 0, 
-              mind_blown: 0, 
-              still_thinking: 0, 
-              changed_me: 0 
+          const formattedPosts: Post[] = data.map(post => {
+            // Parse the release_condition JSON if it exists
+            let releaseCondition;
+            if (post.release_condition) {
+              try {
+                if (typeof post.release_condition === 'string') {
+                  const parsedCondition = JSON.parse(post.release_condition);
+                  releaseCondition = {
+                    requiredReplies: parsedCondition.requiredReplies,
+                    releaseDate: parsedCondition.releaseDate
+                  };
+                } else {
+                  releaseCondition = {
+                    requiredReplies: post.release_condition.requiredReplies,
+                    releaseDate: post.release_condition.releaseDate
+                  };
+                }
+              } catch (e) {
+                console.error('Error parsing release condition:', e);
+                releaseCondition = undefined;
+              }
             }
-          }));
+            
+            return {
+              id: post.id,
+              title: post.media_title || "Untitled",
+              content: post.content,
+              authorId: post.user_id,
+              mediaMetadata: {
+                type: post.media_type as 'book' | 'movie' | 'music' | 'quote' || 'thought',
+                title: post.media_title || ""
+              },
+              openToDiscussion: post.is_open_for_discussion || false,
+              isScheduled: post.is_scheduled || false,
+              releaseAt: post.release_at,
+              releaseCondition: releaseCondition,
+              tags: [], // We'll need to add tags later when we implement them in the database
+              createdAt: post.created_at || new Date().toISOString(),
+              reactions: { 
+                felt_that: 0, 
+                mind_blown: 0, 
+                still_thinking: 0, 
+                changed_me: 0 
+              }
+            };
+          });
           setPosts(formattedPosts);
         } else {
           // If no posts are found in Supabase, use mock data

@@ -55,11 +55,10 @@ export const mockPosts: Post[] = [
     tags: ['philosophy', 'mindfulness'],
     createdAt: '2023-08-15T11:30:00Z',
     reactions: {
-      like: 24,
-      love: 12,
-      wow: 5,
-      sad: 0,
-      angry: 0,
+      felt_that: 24,
+      mind_blown: 12,
+      still_thinking: 5,
+      changed_me: 0
     }
   },
   {
@@ -77,11 +76,10 @@ export const mockPosts: Post[] = [
     tags: ['science', 'quantum physics', 'philosophy'],
     createdAt: '2023-08-10T15:45:00Z',
     reactions: {
-      like: 18,
-      love: 7,
-      wow: 15,
-      sad: 0,
-      angry: 0,
+      felt_that: 18,
+      mind_blown: 7,
+      still_thinking: 15,
+      changed_me: 0
     }
   },
   {
@@ -98,11 +96,10 @@ export const mockPosts: Post[] = [
     tags: ['poetry', 'haiku', 'philosophy'],
     createdAt: '2023-08-05T19:20:00Z',
     reactions: {
-      like: 32,
-      love: 21,
-      wow: 8,
-      sad: 5,
-      angry: 0,
+      felt_that: 32,
+      mind_blown: 21,
+      still_thinking: 8,
+      changed_me: 5
     }
   }
 ];
@@ -115,11 +112,10 @@ export const mockReplies: Reply[] = [
     postId: 'post1',
     createdAt: '2023-08-15T13:45:00Z',
     reactions: {
-      like: 8,
-      love: 3,
-      wow: 1,
-      sad: 0,
-      angry: 0,
+      felt_that: 8,
+      mind_blown: 3,
+      still_thinking: 1,
+      changed_me: 0
     }
   },
   {
@@ -129,11 +125,10 @@ export const mockReplies: Reply[] = [
     postId: 'post1',
     createdAt: '2023-08-15T14:20:00Z',
     reactions: {
-      like: 12,
-      love: 5,
-      wow: 0,
-      sad: 0,
-      angry: 0,
+      felt_that: 12,
+      mind_blown: 5,
+      still_thinking: 0,
+      changed_me: 0
     }
   },
   {
@@ -144,11 +139,10 @@ export const mockReplies: Reply[] = [
     parentReplyId: 'reply2',
     createdAt: '2023-08-15T15:05:00Z',
     reactions: {
-      like: 4,
-      love: 1,
-      wow: 0,
-      sad: 0,
-      angry: 0,
+      felt_that: 4,
+      mind_blown: 1,
+      still_thinking: 0,
+      changed_me: 0
     }
   }
 ];
