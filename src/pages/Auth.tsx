@@ -9,6 +9,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { OTPVerification } from '@/components/auth/OTPVerification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { countryCodes } from '@/lib/countryCodes';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -23,6 +31,7 @@ const Auth = () => {
   const [verificationEmail, setVerificationEmail] = useState('');
   const [verificationPhone, setVerificationPhone] = useState('');
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
+  const [countryCode, setCountryCode] = useState('+91');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -139,7 +148,7 @@ const Auth = () => {
         }
       } else {
         const { error } = await supabase.auth.signInWithOtp({
-          phone: phone.startsWith('+') ? phone : `+${phone}`,
+          phone: `${countryCode}${phone}`,
         });
 
         if (error) {
@@ -149,7 +158,7 @@ const Auth = () => {
             variant: "destructive"
           });
         } else {
-          setVerificationPhone(phone);
+          setVerificationPhone(`${countryCode}${phone}`);
           setShowOTP(true);
           toast({
             title: "Secret Code Sent",
@@ -228,7 +237,7 @@ const Auth = () => {
                       className="w-full justify-center" 
                       isLoading={isLoading}
                     >
-                      {isSignUp ? 'Sign Up' : 'Sign In'}
+                      Sign In
                     </CustomButton>
                   </form>
                 </TabsContent>
@@ -237,13 +246,18 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
                       <div className="flex gap-2">
-                        <Input 
-                          type="tel" 
-                          placeholder="+91" 
-                          className="w-20"
-                          value="+91"
-                          readOnly
-                        />
+                        <Select value={countryCode} onValueChange={setCountryCode}>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Country" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countryCodes.map((code) => (
+                              <SelectItem key={code.code} value={code.dial_code}>
+                                {code.flag} {code.dial_code}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <Input
                           id="phone"
                           type="tel"
@@ -278,20 +292,11 @@ const Auth = () => {
                 <CustomButton
                   variant="outline"
                   className="w-full justify-center"
-                  onClick={handleGoogleSignIn}
+                  onClick={isSignUp ? handleGoogleSignUp : handleGoogleSignIn}
                   isLoading={googleLoading}
                   disabled={googleLoading}
                 >
-                  <span className="mr-2">Sign in with Google</span>
-                </CustomButton>
-                <CustomButton
-                  variant="accent"
-                  className="w-full justify-center"
-                  onClick={handleGoogleSignUp}
-                  isLoading={googleLoading}
-                  disabled={googleLoading}
-                >
-                  <span className="mr-2">Sign up with Google</span>
+                  <span className="mr-2">Continue with Google</span>
                 </CustomButton>
                 <div className="text-center text-sm">
                   <button 

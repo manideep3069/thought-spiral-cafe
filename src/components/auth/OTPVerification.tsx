@@ -37,12 +37,22 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        phone: phone,
-        token: otp,
-        type: phone ? 'sms' : 'email',
-        email: email,
-      });
+      let verifyParams;
+      if (phone) {
+        verifyParams = {
+          phone,
+          token: otp,
+          type: 'sms' as const,
+        };
+      } else {
+        verifyParams = {
+          email,
+          token: otp,
+          type: 'signup' as const,
+        };
+      }
+
+      const { error } = await supabase.auth.verifyOtp(verifyParams);
 
       if (error) {
         toast({
