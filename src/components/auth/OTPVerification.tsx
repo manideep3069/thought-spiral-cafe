@@ -37,24 +37,25 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
 
     setIsLoading(true);
     try {
-      let verifyParams;
+      let result;
+      
       if (phone) {
-        verifyParams = {
+        // Phone verification uses different parameters
+        result = await supabase.auth.verifyOtp({
           phone,
           token: otp,
-          type: 'sms' as const,
-        };
-      } else {
-        verifyParams = {
+          type: 'sms',
+        });
+      } else if (email) {
+        // Email verification uses different parameters
+        result = await supabase.auth.verifyOtp({
           email,
           token: otp,
-          type: 'signup' as const,
-        };
+          type: 'signup',
+        });
       }
 
-      const { error } = await supabase.auth.verifyOtp(verifyParams);
-
-      if (error) {
+      if (result?.error) {
         toast({
           title: "Hmm… that code's already wandered off.",
           description: "Try again. Or ask the café nicely.",
