@@ -61,6 +61,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
           description: "Try again. Or ask the café nicely.",
           variant: "destructive"
         });
+        console.error('Verification error:', result.error);
       } else {
         toast({
           title: "Success",

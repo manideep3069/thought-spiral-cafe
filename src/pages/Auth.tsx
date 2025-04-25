@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
@@ -62,35 +63,6 @@ const Auth = () => {
       console.error('Error during Google sign-in:', error);
       toast({
         title: "Authentication Error",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setGoogleLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-      if (error) {
-        toast({
-          title: "Sign Up Error",
-          description: error.message,
-          variant: "destructive"
-        });
-        console.error('Sign up error with Google:', error.message);
-      }
-    } catch (error) {
-      console.error('Error during Google sign-up:', error);
-      toast({
-        title: "Sign Up Error",
         description: "An unexpected error occurred",
         variant: "destructive"
       });
@@ -191,7 +163,7 @@ const Auth = () => {
               Welcome to GnL café
             </h1>
             <p className="text-muted-foreground">
-              {isSignUp ? "Your spiral begins here." : "Welcome back, Wanderer"}
+              {isSignUp ? "Welcome, Stranger. The café has been expecting you." : "Welcome back, Wanderer"}
             </p>
           </div>
 
@@ -250,9 +222,9 @@ const Auth = () => {
                           <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Country" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-[300px] overflow-y-auto">
                             {countryCodes.map((code) => (
-                              <SelectItem key={code.code} value={code.dial_code}>
+                              <SelectItem key={code.dial_code} value={code.dial_code}>
                                 {code.flag} {code.dial_code}
                               </SelectItem>
                             ))}
@@ -284,7 +256,7 @@ const Auth = () => {
                   <div className="w-full border-t border-border"></div>
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                  <span className="bg-background px-2 text-muted-foreground">Or</span>
                 </div>
               </div>
 
@@ -292,7 +264,7 @@ const Auth = () => {
                 <CustomButton
                   variant="outline"
                   className="w-full justify-center"
-                  onClick={isSignUp ? handleGoogleSignUp : handleGoogleSignIn}
+                  onClick={handleGoogleSignIn}
                   isLoading={googleLoading}
                   disabled={googleLoading}
                 >
