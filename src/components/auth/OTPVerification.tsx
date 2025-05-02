@@ -14,12 +14,14 @@ interface OTPVerificationProps {
   email?: string;
   phone?: string;
   onVerificationComplete: () => void;
+  isSignUp?: boolean;
 }
 
 export const OTPVerification: React.FC<OTPVerificationProps> = ({
   email,
   phone,
-  onVerificationComplete
+  onVerificationComplete,
+  isSignUp = false,
 }) => {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +43,7 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
       
       if (phone) {
         // Phone verification
-        console.log('Verifying phone OTP:', { phone, token: otp });
+        console.log('Verifying phone OTP:', { phone, token: otp, isSignUp });
         result = await supabase.auth.verifyOtp({
           phone,
           token: otp,
@@ -56,6 +58,8 @@ export const OTPVerification: React.FC<OTPVerificationProps> = ({
           type: 'signup',
         });
       }
+
+      console.log('Verification result:', result);
 
       if (result?.error) {
         toast({
