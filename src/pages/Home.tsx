@@ -179,21 +179,7 @@ const Home: React.FC = () => {
             </blockquote>
           </div>
           
-          {/* Sign in prompt for unauthenticated users */}
-          {!user && (
-            <div className="mb-8 p-6 bg-card border border-border rounded-2xl shadow-sm w-full max-w-2xl">
-              <h2 className="text-xl font-serif font-medium mb-2">Join the conversation</h2>
-              <p className="text-muted-foreground mb-4">Sign in to post thoughts, add reactions, and participate in discussions.</p>
-              <div className="flex gap-2">
-                <CustomButton variant="default" onClick={() => navigate('/auth')}>
-                  Sign In
-                </CustomButton>
-                <CustomButton variant="accent" onClick={() => navigate('/auth')}>
-                  Create Account
-                </CustomButton>
-              </div>
-            </div>
-          )}
+          {/* Removed the sign in prompt for unauthenticated users */}
           
           {/* Media Type Filters */}
           <div className="mb-6 w-full max-w-2xl">

@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
-import { mockPosts, Post, getUserById } from '@/data/mockData';
+import { mockPosts, getUserById } from '@/data/mockData';
+import { Post } from '@/types';
 import { CustomButton } from '@/components/ui/custom-button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -141,7 +143,7 @@ const ThreadView: React.FC = () => {
       
       try {
         const { data: repliesData, error: repliesError } = await supabase
-          .from('post_replies')
+          .from('discussions')
           .select('*, user:user_id(*)')
           .eq('post_id', postId)
           .order('created_at', { ascending: true });
@@ -210,7 +212,7 @@ const ThreadView: React.FC = () => {
       }
       
       const { data, error } = await supabase
-        .from('post_replies')
+        .from('discussions')
         .insert({
           post_id: postId,
           user_id: user.id,
@@ -259,7 +261,7 @@ const ThreadView: React.FC = () => {
     
     try {
       const { data: repliesData, error: repliesError } = await supabase
-        .from('post_replies')
+        .from('discussions')
         .select('*, user:user_id(*)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
@@ -283,6 +285,7 @@ const ThreadView: React.FC = () => {
         title: "Error",
         description: "Failed to load replies.",
         variant: "destructive",
+        
       });
     }
   }
