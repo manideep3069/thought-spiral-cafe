@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -10,6 +9,7 @@ import { CustomButton } from '@/components/ui/custom-button';
 import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { getQuoteOfTheDay } from '@/utils/quoteUtils';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -139,10 +139,8 @@ const Home: React.FC = () => {
     ? posts.filter(post => post.tags.includes(activeFilter))
     : posts;
 
-  const quoteOfTheDay = {
-    text: "We don't see things as they are, we see them as we are.",
-    author: "Anaïs Nin"
-  };
+  // Get the quote of the day from our utility
+  const quoteOfTheDay = getQuoteOfTheDay();
 
   return (
     <Layout>

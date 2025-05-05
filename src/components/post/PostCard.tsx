@@ -46,11 +46,15 @@ export const PostCard: React.FC<PostCardProps> = ({
   const handleReaction = async (type: ReactionType) => {
     try {
       setIsAnimating(prev => ({ ...prev, [type]: true }));
-      setActiveReactions(prev => ({ ...prev, [type]: !prev[type] }));
       
-      const newCount = activeReactions[type] 
-        ? (postReactions[type] - 1) 
-        : (postReactions[type] + 1);
+      // Toggle the active state of the reaction
+      const newActiveState = !activeReactions[type];
+      setActiveReactions(prev => ({ ...prev, [type]: newActiveState }));
+      
+      // Update the count based on the new active state
+      const newCount = newActiveState 
+        ? (postReactions[type] + 1) 
+        : (postReactions[type] - 1);
       
       setPostReactions(prev => ({
         ...prev,
@@ -264,7 +268,8 @@ export const PostCard: React.FC<PostCardProps> = ({
             )}
           >
             {reactionIcons.felt_that}
-            {postReactions.felt_that > 0 ? postReactions.felt_that : reactionLabels.felt_that}
+            {reactionLabels.felt_that}
+            {postReactions.felt_that > 0 && <span className="ml-1">{postReactions.felt_that}</span>}
           </button>
           <button 
             onClick={() => handleReaction('mind_blown')}
@@ -276,7 +281,8 @@ export const PostCard: React.FC<PostCardProps> = ({
             )}
           >
             {reactionIcons.mind_blown}
-            {postReactions.mind_blown > 0 ? postReactions.mind_blown : reactionLabels.mind_blown}
+            {reactionLabels.mind_blown}
+            {postReactions.mind_blown > 0 && <span className="ml-1">{postReactions.mind_blown}</span>}
           </button>
           <button 
             onClick={() => handleReaction('still_thinking')}
@@ -288,7 +294,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             )}
           >
             {reactionIcons.still_thinking}
-            {postReactions.still_thinking > 0 ? postReactions.still_thinking : "Still thinking..."}
+            {postReactions.still_thinking > 0 ? <span>Still thinking... {postReactions.still_thinking}</span> : "Still thinking..."}
           </button>
           <button 
             onClick={() => handleReaction('changed_me')}
@@ -300,7 +306,8 @@ export const PostCard: React.FC<PostCardProps> = ({
             )}
           >
             {reactionIcons.changed_me}
-            {postReactions.changed_me > 0 ? postReactions.changed_me : "Changed me"}
+            {reactionLabels.changed_me}
+            {postReactions.changed_me > 0 && <span className="ml-1">{postReactions.changed_me}</span>}
           </button>
         </div>
         
