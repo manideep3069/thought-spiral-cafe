@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Share2, Copy, Instagram, Link2, MessageCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -66,67 +66,67 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ title, url }) => {
         <DialogHeader>
           <DialogTitle className="text-center text-xl">Share this thought</DialogTitle>
         </DialogHeader>
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Link preview and copy button */}
-          <div className="flex items-center space-x-2 rounded-lg border bg-muted/30 p-4 shadow-sm">
-            <div className="p-2 bg-primary/10 rounded-full">
-              <Link2 className="h-4 w-4 text-primary" />
+          <div className="flex items-center space-x-2 rounded-lg border bg-muted/30 p-3">
+            <div className="p-1.5 bg-primary/10 rounded-full">
+              <Link2 className="h-3.5 w-3.5 text-primary" />
             </div>
-            <p className="line-clamp-1 flex-1 text-sm text-muted-foreground">
+            <p className="line-clamp-1 flex-1 text-xs text-muted-foreground">
               {getShortenedUrl(url)}
             </p>
             <Button 
               variant="secondary" 
               size="sm" 
               onClick={handleCopyLink}
-              className="hover:bg-primary/20"
+              className="h-7 px-2 text-xs hover:bg-primary/20"
             >
-              <Copy className="h-4 w-4 mr-2" />
+              <Copy className="h-3 w-3 mr-1" />
               Copy
             </Button>
           </div>
           
-          {/* Social sharing buttons */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Social sharing buttons grid - now with proper containment */}
+          <div className="grid grid-cols-3 gap-2 w-full">
             {/* X (Twitter) */}
             <Button
               variant="outline"
               className={cn(
-                "flex flex-col items-center justify-center h-24 hover:bg-black/5 hover:border-black/30",
-                "transition-all"
+                "flex flex-col items-center justify-center h-16 text-xs hover:bg-black/5 hover:border-black/30",
+                "transition-all py-1 px-1"
               )}
               onClick={() => shareToSocial('x')}
             >
-              <svg className="h-6 w-6 mb-2" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="h-4 w-4 mb-1" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
               </svg>
-              <span className="text-sm">X</span>
+              <span className="text-xs">X</span>
             </Button>
             
             {/* Instagram */}
             <Button
               variant="outline"
               className={cn(
-                "flex flex-col items-center justify-center h-24 hover:bg-gradient-to-tr hover:from-purple-100 hover:to-amber-100 hover:border-pink-300",
-                "transition-all"
+                "flex flex-col items-center justify-center h-16 text-xs hover:bg-gradient-to-tr hover:from-purple-100 hover:to-amber-100 hover:border-pink-300",
+                "transition-all py-1 px-1"
               )}
               onClick={() => shareToSocial('instagram')}
             >
-              <Instagram className="h-6 w-6 mb-2" />
-              <span className="text-sm">Instagram</span>
+              <Instagram className="h-4 w-4 mb-1" />
+              <span className="text-xs">Instagram</span>
             </Button>
             
             {/* WhatsApp */}
             <Button
               variant="outline"
               className={cn(
-                "flex flex-col items-center justify-center h-24 hover:bg-emerald-50 hover:border-emerald-300",
-                "transition-all"
+                "flex flex-col items-center justify-center h-16 text-xs hover:bg-emerald-50 hover:border-emerald-300",
+                "transition-all py-1 px-1"
               )}
               onClick={() => shareToSocial('whatsapp')}
             >
-              <MessageCircle className="h-6 w-6 mb-2" />
-              <span className="text-sm">WhatsApp</span>
+              <MessageCircle className="h-4 w-4 mb-1" />
+              <span className="text-xs">WhatsApp</span>
             </Button>
           </div>
         </div>
