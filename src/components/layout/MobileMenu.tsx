@@ -23,7 +23,7 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 top-16 z-50 bg-[#1A1F2C]/95 backdrop-blur-sm animate-in slide-in-from-top-5">
+    <div className="fixed inset-0 top-0 z-50 min-h-screen bg-[#1A1F2C] animate-in slide-in-from-top-5">
       <div className="container py-6 space-y-4">
         <Link 
           to="/" 
