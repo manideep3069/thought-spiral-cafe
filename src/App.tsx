@@ -17,7 +17,7 @@ import { GroundRulesModal } from "./components/auth/GroundRulesModal";
 
 const queryClient = new QueryClient();
 
-// Ground Rules wrapper for routes
+// Ground Rules wrapper for routes that require authentication
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -135,6 +135,11 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
+// Public route wrapper with optional auth state
+const PublicRoute = ({ children }: { children: JSX.Element }) => {
+  return children;
+};
+
 // Auth callback handler
 const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
@@ -192,9 +197,11 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
-          <Route path="/thread/:postId" element={<ProtectedRoute><ThreadView /></ProtectedRoute>} />
+          {/* Public routes that anyone can view */}
+          <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
+          <Route path="/discover" element={<PublicRoute><Discover /></PublicRoute>} />
+          <Route path="/thread/:postId" element={<PublicRoute><ThreadView /></PublicRoute>} />
+          {/* Protected routes that require authentication */}
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />

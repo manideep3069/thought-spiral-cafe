@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -17,6 +18,7 @@ const Home: React.FC = () => {
   const [activeMediaType, setActiveMediaType] = useState<string | null>(null);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
   
   const popularTags = ['philosophy', 'art', 'science', 'poetry', 'books', 'music', 'history', 'nature', 'fiction', 'psychology'];
@@ -27,6 +29,24 @@ const Home: React.FC = () => {
     { name: 'podcast', icon: <Mic className="h-4 w-4 mr-2" /> },
     { name: 'art', icon: <Paintbrush className="h-4 w-4 mr-2" /> },
   ];
+
+  // Check auth status
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user || null);
+    };
+    
+    checkUser();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Fetch posts from Supabase
   useEffect(() => {
@@ -137,6 +157,14 @@ const Home: React.FC = () => {
   // Get the quote of the day from our utility
   const quoteOfTheDay = getQuoteOfTheDay();
 
+  const handleSignInRequired = () => {
+    toast({
+      title: "Sign in required",
+      description: "Please sign in to interact with posts",
+    });
+    navigate('/auth');
+  };
+
   return (
     <Layout>
       <div className="w-full flex flex-col lg:flex-row gap-8">
@@ -150,6 +178,22 @@ const Home: React.FC = () => {
               <footer className="mt-2 text-sm text-muted-foreground">— {quoteOfTheDay.author}</footer>
             </blockquote>
           </div>
+          
+          {/* Sign in prompt for unauthenticated users */}
+          {!user && (
+            <div className="mb-8 p-6 bg-card border border-border rounded-2xl shadow-sm w-full max-w-2xl">
+              <h2 className="text-xl font-serif font-medium mb-2">Join the conversation</h2>
+              <p className="text-muted-foreground mb-4">Sign in to post thoughts, add reactions, and participate in discussions.</p>
+              <div className="flex gap-2">
+                <CustomButton variant="default" onClick={() => navigate('/auth')}>
+                  Sign In
+                </CustomButton>
+                <CustomButton variant="accent" onClick={() => navigate('/auth')}>
+                  Create Account
+                </CustomButton>
+              </div>
+            </div>
+          )}
           
           {/* Media Type Filters */}
           <div className="mb-6 w-full max-w-2xl">
@@ -228,6 +272,8 @@ const Home: React.FC = () => {
                   post={post}
                   compact
                   onViewThread={handleViewThread}
+                  isAuthenticated={!!user}
+                  onAuthRequired={handleSignInRequired}
                 />
               ))
             ) : (

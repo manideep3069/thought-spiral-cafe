@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Post, User, ReactionType } from "@/types";
 import { getUserById } from "@/data/mockData";
@@ -14,12 +15,16 @@ interface PostCardProps {
   post: Post;
   compact?: boolean;
   onViewThread?: (postId: string) => void;
+  isAuthenticated?: boolean;
+  onAuthRequired?: () => void;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ 
   post, 
   compact = false,
-  onViewThread 
+  onViewThread,
+  isAuthenticated = true,
+  onAuthRequired = () => {}
 }) => {
   const author = getUserById(post.authorId);
   const defaultReactions = {
@@ -45,6 +50,12 @@ export const PostCard: React.FC<PostCardProps> = ({
   
   const handleReaction = async (type: ReactionType) => {
     try {
+      // If not authenticated, prompt for auth
+      if (!isAuthenticated) {
+        onAuthRequired();
+        return;
+      }
+      
       setIsAnimating(prev => ({ ...prev, [type]: true }));
       
       // Toggle the active state of the reaction

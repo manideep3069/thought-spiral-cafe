@@ -1,418 +1,371 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
-import { ReplyCard } from '@/components/post/ReplyCard';
-import { getPostById, getRepliesForPost } from '@/data/mockData';
-import { ArrowLeft, Clock, LockIcon } from 'lucide-react';
+import { mockPosts, Post, getUserById } from '@/data/mockData';
 import { CustomButton } from '@/components/ui/custom-button';
-import { supabase } from '@/integrations/supabase/client';
-import { Post, Reply } from '@/types';
-import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { format, isValid } from 'date-fns';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const ThreadView: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
-  const [replies, setReplies] = useState<Reply[]>([]);
-  const [loading, setLoading] = useState(true);
   const [replyContent, setReplyContent] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [spiralName, setSpiralName] = useState('');
-  
-  const fetchReplies = async () => {
-    if (!postId) return;
-    
-    try {
-      const { data: supabaseReplies, error } = await supabase
-        .from('discussions')
-        .select('*')
-        .eq('post_id', postId)
-        .is('parent_discussion_id', null)
-        .order('created_at', { ascending: false });
-        
-      if (supabaseReplies && !error) {
-        // Format supabase replies to match our Reply type
-        const formattedReplies: Reply[] = supabaseReplies.map(reply => ({
-          id: reply.id,
-          content: reply.content || '',
-          authorId: reply.user_id,
-          postId: reply.post_id,
-          parentReplyId: reply.parent_discussion_id,
-          createdAt: reply.created_at,
-          reactions: {
-            felt_that: 0,
-            mind_blown: 0,
-            still_thinking: 0,
-            changed_me: 0
-          }
-        }));
-        setReplies(formattedReplies);
-      } else {
-        // Fallback to mock data
-        const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
-        setReplies(mockReplies);
-      }
-    } catch (err) {
-      console.error("Error fetching replies:", err);
-      // Fallback to mock data
-      const mockReplies = getRepliesForPost(postId).filter(reply => !reply.parentReplyId);
-      setReplies(mockReplies);
-    }
-  };
-  
+  const [replies, setReplies] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const { toast } = useToast();
+
   useEffect(() => {
-    const fetchPostData = async () => {
-      if (!postId) return;
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user || null);
+    };
+    
+    checkUser();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    async function fetchPost() {
+      if (!postId) {
+        toast({
+          title: "Error",
+          description: "Post ID is missing.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       try {
-        const { data: supabasePost, error } = await supabase
+        const { data: postData, error: postError } = await supabase
           .from('posts')
           .select('*')
           .eq('id', postId)
           .single();
         
-        if (supabasePost && !error) {
-          // Format the post data to match our Post type
-          // Updated to use literature instead of book for the media type
-          const mediaType = supabasePost.media_type as "thought" | "literature" | "movie" | "music" | "quote" | "art" | "podcast" | null;
-          
-          // Convert JSON release condition to the expected format
-          let formattedReleaseCondition: { requiredReplies?: number; releaseDate?: string } | undefined;
-          
-          if (supabasePost.release_condition) {
+        if (postError) {
+          console.error('Error fetching post:', postError);
+          toast({
+            title: "Error",
+            description: "Failed to load post.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (postData) {
+          // Transform Supabase data to match Post type
+          let releaseCondition;
+          if (postData.release_condition) {
             try {
-              const releaseCondition = typeof supabasePost.release_condition === 'string' 
-                ? JSON.parse(supabasePost.release_condition)
-                : supabasePost.release_condition;
-                
-              formattedReleaseCondition = {
-                requiredReplies: releaseCondition.requiredReplies,
-                releaseDate: releaseCondition.releaseDate
-              };
+              if (typeof postData.release_condition === 'string') {
+                const parsedCondition = JSON.parse(postData.release_condition);
+                releaseCondition = {
+                  requiredReplies: parsedCondition.requiredReplies,
+                  releaseDate: parsedCondition.releaseDate
+                };
+              } else if (typeof postData.release_condition === 'object') {
+                // Check if the object has the expected properties
+                const condition = postData.release_condition as Record<string, any>;
+                releaseCondition = {
+                  requiredReplies: condition.requiredReplies !== undefined ? 
+                    Number(condition.requiredReplies) : undefined,
+                  releaseDate: condition.releaseDate || undefined
+                };
+              }
             } catch (e) {
-              console.error("Error parsing release condition:", e);
-              formattedReleaseCondition = undefined;
+              console.error('Error parsing release condition:', e);
+              releaseCondition = undefined;
             }
           }
           
           const formattedPost: Post = {
-            id: supabasePost.id,
-            title: supabasePost.media_title || 'Untitled',
-            content: supabasePost.content || '',
-            authorId: supabasePost.user_id,
+            id: postData.id,
+            title: postData.media_title || "Untitled",
+            content: postData.content,
+            authorId: postData.user_id,
             mediaMetadata: {
-              type: mediaType || 'thought',
-              title: supabasePost.media_title,
+              type: (postData.media_type as 'literature' | 'movie' | 'music' | 'quote' | 'thought' | 'art' | 'podcast') || 'thought',
+              title: postData.media_title || ""
             },
-            openToDiscussion: supabasePost.is_open_for_discussion || false,
-            tags: [],
-            createdAt: supabasePost.created_at,
-            reactions: {
-              felt_that: 0,
-              mind_blown: 0,
-              still_thinking: 0,
-              changed_me: 0
-            },
-            isScheduled: supabasePost.is_scheduled || false,
-            releaseAt: supabasePost.release_at,
-            releaseCondition: formattedReleaseCondition
+            openToDiscussion: postData.is_open_for_discussion || false,
+            isScheduled: postData.is_scheduled || false,
+            releaseAt: postData.release_at,
+            releaseCondition: releaseCondition,
+            tags: [], // We'll need to add tags later when we implement them in the database
+            createdAt: postData.created_at || new Date().toISOString(),
+            reactions: { 
+              felt_that: 0, 
+              mind_blown: 0, 
+              still_thinking: 0, 
+              changed_me: 0 
+            }
           };
-          
           setPost(formattedPost);
         } else {
-          // Fallback to mock data
-          const mockPost = getPostById(postId);
-          setPost(mockPost);
+          toast({
+            title: "Not found",
+            description: "Post not found.",
+            variant: "destructive",
+          });
+          navigate('/');
         }
       } catch (err) {
-        console.error("Error fetching post:", err);
-        // Fallback to mock data
-        const mockPost = getPostById(postId);
-        setPost(mockPost);
+        console.error('Exception when fetching post:', err);
+        toast({
+          title: "Error",
+          description: "Failed to load post.",
+          variant: "destructive",
+        });
       }
-      
-      await fetchReplies();
-      setLoading(false);
-    };
+    }
     
-    fetchPostData();
-  }, [postId]);
+    fetchPost();
+  }, [postId, navigate, toast]);
+
+  useEffect(() => {
+    async function fetchReplies() {
+      if (!postId) return;
+      
+      try {
+        const { data: repliesData, error: repliesError } = await supabase
+          .from('post_replies')
+          .select('*, user:user_id(*)')
+          .eq('post_id', postId)
+          .order('created_at', { ascending: true });
+        
+        if (repliesError) {
+          console.error('Error fetching replies:', repliesError);
+          toast({
+            title: "Error",
+            description: "Failed to load replies.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        if (repliesData) {
+          setReplies(repliesData);
+        }
+      } catch (err) {
+        console.error('Exception when fetching replies:', err);
+        toast({
+          title: "Error",
+          description: "Failed to load replies.",
+          variant: "destructive",
+        });
+      }
+    }
+    
+    fetchReplies();
+  }, [postId, toast]);
   
+  const handleAuthRequired = () => {
+    toast({
+      title: "Sign in required",
+      description: "Please sign in to interact with posts and reply to discussions",
+    });
+    navigate('/auth');
+  };
+
   const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!replyContent.trim()) {
-      toast.error("Reply cannot be empty");
+      toast({
+        title: "Missing reply",
+        description: "Please enter a reply.",
+        variant: "destructive",
+      });
       return;
     }
-    
-    if (!postId) {
-      toast.error("Missing post ID");
+
+    if (!user) {
+      handleAuthRequired();
       return;
     }
-    
-    setSubmitting(true);
     
     try {
-      // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error("Please login to comment");
-        setSubmitting(false);
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to reply.",
+          variant: "destructive",
+        });
         return;
       }
       
-      // Add reply to supabase
-      const { data: newReply, error } = await supabase
-        .from('discussions')
-        .insert([
-          { 
-            post_id: postId,
-            user_id: user.id,
-            content: replyContent,
-            parent_discussion_id: null
-          }
-        ])
-        .select();
+      const { data, error } = await supabase
+        .from('post_replies')
+        .insert({
+          post_id: postId,
+          user_id: user.id,
+          content: replyContent.trim(),
+          created_at: new Date().toISOString()
+        });
       
       if (error) {
-        console.error("Error posting reply:", error);
-        
-        // If it's an RLS error, show more helpful error message
-        if (error.code === '42501') {
-          toast.error("You don't have permission to post. Please try signing in again.");
-        } else {
-          toast.error("Failed to post reply: " + error.message);
-        }
-        
-        // Fallback to mock data reply if in development environment
-        if (process.env.NODE_ENV === 'development') {
-          const mockReply: Reply = {
-            id: Math.random().toString(),
-            content: replyContent,
-            authorId: user.id,
-            postId: postId,
-            parentReplyId: null,
-            createdAt: new Date().toISOString(),
-            reactions: {
-              felt_that: 0,
-              mind_blown: 0,
-              still_thinking: 0,
-              changed_me: 0
-            }
-          };
-          
-          // Add to replies state
-          setReplies(prevReplies => [mockReply, ...prevReplies]);
-          setReplyContent('');
-          setSpiralName('');
-          toast.success("Reply posted successfully (Mock Mode)");
-        }
-        
-        setSubmitting(false);
-        return;
+        console.error("Error creating reply:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create reply. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Your reply has been posted!",
+        });
+        setReplyContent('');
+        // Refresh replies
+        fetchReplies();
       }
-      
-      if (!newReply || newReply.length === 0) {
-        toast.error("No reply data returned");
-        setSubmitting(false);
-        return;
-      }
-      
-      // Format the new reply to match our Reply type
-      const formattedReply: Reply = {
-        id: newReply[0].id,
-        content: newReply[0].content || '',
-        authorId: newReply[0].user_id,
-        postId: newReply[0].post_id,
-        parentReplyId: newReply[0].parent_discussion_id,
-        createdAt: newReply[0].created_at,
-        reactions: {
-          felt_that: 0,
-          mind_blown: 0,
-          still_thinking: 0,
-          changed_me: 0
-        }
-      };
-      
-      // Add to replies state
-      setReplies(prevReplies => [formattedReply, ...prevReplies]);
-      setReplyContent('');
-      setSpiralName('');
-      
-      // Check if this post has a release condition based on reply count
-      if (post?.isScheduled && post.releaseCondition?.requiredReplies) {
-        if (replies.length + 1 >= post.releaseCondition.requiredReplies) {
-          // Optimistically update the UI first
-          setPost(prev => prev ? {
-            ...prev,
-            isScheduled: false,
-            openToDiscussion: true
-          } : null);
-          
-          toast.success("Your reply has unlocked this post!");
-        }
-      }
-      
-      toast.success("Reply posted successfully");
     } catch (err) {
-      console.error("Error:", err);
-      toast.error("Something went wrong");
-    } finally {
-      setSubmitting(false);
+      console.error("Error submitting reply:", err);
+      toast({
+        title: "Error",
+        description: "Failed to create reply. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return isValid(date) ? format(date, "MMM d, yyyy 'at' h:mm a") : "Unknown date";
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Unknown date";
     }
   };
   
-  if (loading) {
+  async function fetchReplies() {
+    if (!postId) return;
+    
+    try {
+      const { data: repliesData, error: repliesError } = await supabase
+        .from('post_replies')
+        .select('*, user:user_id(*)')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+      
+      if (repliesError) {
+        console.error('Error fetching replies:', repliesError);
+        toast({
+          title: "Error",
+          description: "Failed to load replies.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (repliesData) {
+        setReplies(repliesData);
+      }
+    } catch (err) {
+      console.error('Exception when fetching replies:', err);
+      toast({
+        title: "Error",
+        description: "Failed to load replies.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  if (!post) {
     return (
       <Layout>
-        <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="flex min-h-screen items-center justify-center">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
       </Layout>
     );
   }
-  
-  if (!post) {
-    return (
-      <Layout>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-serif font-medium mb-4">Thought Not Found</h2>
-          <p className="text-muted-foreground mb-6">The discussion you're looking for doesn't exist or has been removed.</p>
-          <CustomButton variant="default" onClick={() => navigate('/')}>
-            Return Home
-          </CustomButton>
-        </div>
-      </Layout>
-    );
-  }
-  
-  // Get top level replies only
-  const topLevelReplies = replies.filter(reply => !reply.parentReplyId);
-  
-  // Check if post is scheduled and not yet released
-  const isScheduledAndNotReleased = post.isScheduled && !post.openToDiscussion;
-  
-  // Calculate progress for scheduled posts with required replies
-  const replyProgress = post.releaseCondition?.requiredReplies 
-    ? Math.min(Math.round((replies.length / post.releaseCondition.requiredReplies) * 100), 100)
-    : 0;
-  
+
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
-        <button 
-          onClick={() => navigate(-1)}
-          className="mb-6 flex items-center text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </button>
+      <div className="container mx-auto mt-8">
+        <PostCard 
+          post={post} 
+          isAuthenticated={!!user}
+          onAuthRequired={handleAuthRequired}
+        />
         
-        {/* Main post */}
-        <PostCard post={post} />
-        
-        {/* Reply form - only show if post is not scheduled or already released */}
-        <div className="mt-8 mb-6">
-          <h3 className="text-lg font-medium mb-4">Start a Spiral</h3>
-          
-          {isScheduledAndNotReleased ? (
-            <div className="p-6 bg-card border border-border rounded-2xl">
-              <div className="flex items-center mb-4">
-                <LockIcon className="h-5 w-5 text-amber-500 mr-2" />
-                <h4 className="font-medium">This thought is scheduled for future release</h4>
-              </div>
-              
-              {post.releaseCondition?.requiredReplies && (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    This thought will be unlocked after {post.releaseCondition.requiredReplies} replies.
-                    Your contribution helps unlock the content!
-                  </p>
-                  
-                  <div className="w-full bg-muted rounded-full h-2.5">
-                    <div 
-                      className="bg-primary h-2.5 rounded-full transition-all duration-500 ease-out" 
-                      style={{ width: `${replyProgress}%` }}
-                    ></div>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground text-right">
-                    {replies.length} of {post.releaseCondition.requiredReplies} replies
-                  </p>
-                </div>
-              )}
-              
-              {post.releaseAt && (
-                <p className="text-sm text-muted-foreground flex items-center">
-                  <Clock className="h-4 w-4 mr-2" />
-                  This thought will be unlocked on {new Date(post.releaseAt).toLocaleDateString()}
-                </p>
-              )}
+        {/* Sign in prompt for unauthenticated users before the reply form */}
+        {!user && (
+          <div className="mb-8 p-6 bg-card border border-border rounded-2xl shadow-sm w-full">
+            <h2 className="text-xl font-serif font-medium mb-2">Join the conversation</h2>
+            <p className="text-muted-foreground mb-4">Sign in to reply to this discussion.</p>
+            <div className="flex gap-2">
+              <CustomButton variant="default" onClick={() => navigate('/auth')}>
+                Sign In
+              </CustomButton>
+              <CustomButton variant="accent" onClick={() => navigate('/auth')}>
+                Create Account
+              </CustomButton>
             </div>
-          ) : (
-            <form onSubmit={handleSubmitReply} className="space-y-4">
-              <div>
-                <label htmlFor="spiralName" className="text-sm font-medium mb-1 block">
-                  Name your spiral (optional)
-                </label>
-                <Input
-                  id="spiralName"
-                  placeholder="e.g., What if time isn't linear?"
-                  value={spiralName}
-                  onChange={(e) => setSpiralName(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <textarea 
-                className="w-full p-4 rounded-2xl border border-border bg-card min-h-32 focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Start your spiral..."
+          </div>
+        )}
+
+        {/* Only show reply form to authenticated users */}
+        {user && (
+          <form onSubmit={handleSubmitReply} className="mt-6">
+            <div className="mb-4">
+              <Textarea
+                placeholder="Write your reply..."
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                disabled={submitting}
+                className="w-full rounded-md border border-border p-3 resize-none"
               />
-              <div className="mt-4 flex justify-end">
-                <CustomButton 
-                  variant="accent" 
-                  type="submit" 
-                  disabled={submitting || !replyContent.trim()}
-                >
-                  {submitting ? 'Creating spiral...' : 'Create Spiral'}
-                </CustomButton>
-              </div>
-            </form>
-          )}
-        </div>
+            </div>
+            <CustomButton type="submit">
+              Post Reply
+            </CustomButton>
+          </form>
+        )}
         
-        {/* Replies as spirals */}
+        {/* Replies Section */}
         <div className="mt-8">
-          <h3 className="text-lg font-medium mb-4">
-            Spirals {topLevelReplies.length > 0 && `(${topLevelReplies.length})`}
-          </h3>
-          
-          {topLevelReplies.length > 0 ? (
-            <div className="space-y-4">
-              {topLevelReplies.map(reply => (
-                <ReplyCard 
-                  key={reply.id} 
-                  reply={reply} 
-                  postId={postId || ''}
-                  spiralName={spiralName}  
-                />
+          <h4 className="text-xl font-serif font-medium mb-4">Replies:</h4>
+          {replies.length > 0 ? (
+            <ul className="space-y-4">
+              {replies.map(reply => (
+                <li key={reply.id} className="bg-card rounded-lg p-4 border border-border">
+                  <div className="flex items-start space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={reply.user?.avatar_url} alt={reply.user?.name} />
+                      <AvatarFallback>{reply.user?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium leading-none">{reply.user?.name || "Anonymous"}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(reply.created_at)}</p>
+                      </div>
+                      <p className="text-sm text-foreground/80">
+                        {reply.content}
+                      </p>
+                    </div>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
-            <div className="text-center py-8 bg-muted/30 rounded-2xl">
-              <p className="text-muted-foreground">
-                {isScheduledAndNotReleased && post.releaseCondition?.requiredReplies
-                  ? "Be the first to help unlock this thought by replying!"
-                  : "No spirals yet. Be the first to start one!"}
-              </p>
-            </div>
+            <p className="text-muted-foreground">No replies yet. Be the first to reply!</p>
           )}
         </div>
       </div>
