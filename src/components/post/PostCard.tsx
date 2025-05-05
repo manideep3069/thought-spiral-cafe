@@ -4,7 +4,7 @@ import { getUserById } from "@/data/mockData";
 import { CustomButton } from "@/components/ui/custom-button";
 import { Tag } from "@/components/ui/tag";
 import { format, isValid } from "date-fns";
-import { Heart, MessageSquare, Share2, ThumbsUp, Frown, AlertCircle, Book, Music, Film, Mic, Brain, Clock, Sparkles } from "lucide-react";
+import { Heart, MessageSquare, Share2, ThumbsUp, Frown, AlertCircle, Book, Music, Film, Mic, Paintbrush, Brain, Clock, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -118,10 +118,11 @@ export const PostCard: React.FC<PostCardProps> = ({
   };
 
   const mediaTypeIcons: Record<string, React.ReactNode> = {
-    book: <Book className="h-4 w-4 mr-1 text-blue-500" />,
+    literature: <Book className="h-4 w-4 mr-1 text-blue-500" />,
     music: <Music className="h-4 w-4 mr-1 text-purple-500" />,
     movie: <Film className="h-4 w-4 mr-1 text-red-500" />,
-    podcast: <Mic className="h-4 w-4 mr-1 text-green-500" />
+    podcast: <Mic className="h-4 w-4 mr-1 text-green-500" />,
+    art: <Paintbrush className="h-4 w-4 mr-1 text-amber-500" />
   };
 
   const isScheduledAndNotReleased = post.isScheduled && !post.openToDiscussion;

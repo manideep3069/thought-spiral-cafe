@@ -67,7 +67,7 @@ export const mockPosts: Post[] = [
     content: 'Each decision we make splits our reality into multiple branches. In one universe, you didn\'t read this post. In another, you\'re about to write a reply that will change my thinking forever.',
     authorId: 'user3',
     mediaMetadata: {
-      type: 'book',
+      type: 'literature',
       title: 'The Hidden Reality',
       author: 'Brian Greene',
       year: 2011,

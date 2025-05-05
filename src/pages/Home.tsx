@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -87,7 +86,7 @@ const Home: React.FC = () => {
               content: post.content,
               authorId: post.user_id,
               mediaMetadata: {
-                type: post.media_type as 'literature' | 'movie' | 'music' | 'quote' | 'thought' | 'art' | 'podcast',
+                type: (post.media_type as 'literature' | 'movie' | 'music' | 'quote' | 'thought' | 'art' | 'podcast') || 'thought',
                 title: post.media_title || ""
               },
               openToDiscussion: post.is_open_for_discussion || false,
