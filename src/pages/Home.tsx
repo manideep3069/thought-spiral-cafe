@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
 import { Tag } from '@/components/ui/tag';
 import { mockPosts } from '@/data/mockData';
-import { Filter, TrendingUp, Book, Music, Film, Mic, Clock } from 'lucide-react';
+import { Filter, TrendingUp, Book, Music, Film, Mic, Paintbrush } from 'lucide-react';
 import { CustomButton } from '@/components/ui/custom-button';
 import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types';
@@ -15,17 +16,17 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [activeMediaType, setActiveMediaType] = useState<string | null>(null);
-  const [showScheduled, setShowScheduled] = useState<boolean>(false);
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const { toast } = useToast();
   
   const popularTags = ['philosophy', 'art', 'science', 'poetry', 'books', 'music', 'history', 'nature', 'fiction', 'psychology'];
   const mediaTypes = [
-    { name: 'book', icon: <Book className="h-4 w-4 mr-2" /> },
+    { name: 'literature', icon: <Book className="h-4 w-4 mr-2" /> },
     { name: 'music', icon: <Music className="h-4 w-4 mr-2" /> },
     { name: 'movie', icon: <Film className="h-4 w-4 mr-2" /> },
     { name: 'podcast', icon: <Mic className="h-4 w-4 mr-2" /> },
+    { name: 'art', icon: <Paintbrush className="h-4 w-4 mr-2" /> },
   ];
 
   // Fetch posts from Supabase
@@ -39,11 +40,6 @@ const Home: React.FC = () => {
         // Apply media type filter if selected
         if (activeMediaType) {
           query = query.eq('media_type', activeMediaType);
-        }
-        
-        // Apply scheduled post filter
-        if (!showScheduled) {
-          query = query.or('is_scheduled.is.null,is_scheduled.eq.false');
         }
         
         const { data, error } = await query;
@@ -91,7 +87,7 @@ const Home: React.FC = () => {
               content: post.content,
               authorId: post.user_id,
               mediaMetadata: {
-                type: post.media_type as 'book' | 'movie' | 'music' | 'quote' || 'thought',
+                type: post.media_type as 'literature' | 'movie' | 'music' | 'quote' | 'thought' | 'art' | 'podcast',
                 title: post.media_title || ""
               },
               openToDiscussion: post.is_open_for_discussion || false,
@@ -120,7 +116,7 @@ const Home: React.FC = () => {
     }
     
     fetchPosts();
-  }, [activeMediaType, showScheduled, toast]);
+  }, [activeMediaType, toast]);
   
   const handleViewThread = (postId: string) => {
     navigate(`/thread/${postId}`);
@@ -173,24 +169,12 @@ const Home: React.FC = () => {
                 </CustomButton>
               ))}
               
-              {/* Scheduled posts filter */}
-              <CustomButton 
-                variant={showScheduled ? "default" : "outline"}
-                size="sm"
-                className={`capitalize ${showScheduled ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500' : ''}`}
-                onClick={() => setShowScheduled(!showScheduled)}
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                {showScheduled ? "Including scheduled" : "Show scheduled"}
-              </CustomButton>
-              
-              {(activeMediaType || showScheduled) && (
+              {activeMediaType && (
                 <CustomButton 
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     setActiveMediaType(null);
-                    setShowScheduled(false);
                   }}
                 >
                   Clear filters
@@ -250,13 +234,12 @@ const Home: React.FC = () => {
             ) : (
               <div className="text-center py-12">
                 <p className="text-lg text-muted-foreground">No thoughts found for this filter.</p>
-                {(activeFilter || activeMediaType || showScheduled) && (
+                {(activeFilter || activeMediaType) && (
                   <CustomButton 
                     variant="link" 
                     onClick={() => {
                       setActiveFilter(null);
                       setActiveMediaType(null);
-                      setShowScheduled(false);
                     }}
                     className="mt-2"
                   >

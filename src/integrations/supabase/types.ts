@@ -174,6 +174,7 @@ export type Database = {
           privacy_setting: boolean | null
           random_name: string | null
           role: string
+          rules_accepted: boolean
           tags: string[] | null
           updated_at: string | null
         }
@@ -188,6 +189,7 @@ export type Database = {
           privacy_setting?: boolean | null
           random_name?: string | null
           role?: string
+          rules_accepted?: boolean
           tags?: string[] | null
           updated_at?: string | null
         }
@@ -202,6 +204,7 @@ export type Database = {
           privacy_setting?: boolean | null
           random_name?: string | null
           role?: string
+          rules_accepted?: boolean
           tags?: string[] | null
           updated_at?: string | null
         }
