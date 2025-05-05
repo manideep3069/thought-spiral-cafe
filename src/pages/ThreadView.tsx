@@ -76,7 +76,8 @@ const ThreadView: React.FC = () => {
         
         if (supabasePost && !error) {
           // Format the post data to match our Post type
-          const mediaType = supabasePost.media_type as "thought" | "book" | "movie" | "music" | "quote" | null;
+          // Updated to use literature instead of book for the media type
+          const mediaType = supabasePost.media_type as "thought" | "literature" | "movie" | "music" | "quote" | "art" | "podcast" | null;
           
           // Convert JSON release condition to the expected format
           let formattedReleaseCondition: { requiredReplies?: number; releaseDate?: string } | undefined;
