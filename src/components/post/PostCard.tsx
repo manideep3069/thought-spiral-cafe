@@ -89,31 +89,21 @@ export const PostCard: React.FC<PostCardProps> = ({
         
         if (existingReaction && !newActiveState) {
           // Delete if toggling off
-          const { error } = await supabase
+          await supabase
             .from('post_reactions')
             .delete()
             .eq('post_id', post.id)
             .eq('user_id', user.id)
             .eq('reaction_type', type);
-            
-          if (error) {
-            console.error(`Reaction delete error: ${error.message}`);
-            toast.error("Error removing reaction");
-          }
         } else if (!existingReaction && newActiveState) {
           // Insert if toggling on
-          const { error } = await supabase
+          await supabase
             .from('post_reactions')
             .insert({ 
               post_id: post.id, 
               user_id: user.id,
               reaction_type: type
             });
-          
-          if (error) {
-            console.error(`Reaction insert error: ${error.message}`);
-            toast.error("Error adding reaction");
-          }
         }
       }
       
@@ -362,7 +352,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       {isScheduledAndNotReleased && post.releaseCondition?.requiredReplies && (
         <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground flex items-center">
           <AlertCircle className="h-3 w-3 mr-1" />
-          Replies progress: 0/{post.releaseCondition.requiredReplies}
+          Spirals progress: 0/{post.releaseCondition.requiredReplies}
         </div>
       )}
     </article>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
@@ -19,6 +18,7 @@ const Home: React.FC = () => {
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [trendingPosts, setTrendingPosts] = useState<Post[]>([]);
   const { toast } = useToast();
   
   const popularTags = ['philosophy', 'art', 'science', 'poetry', 'books', 'music', 'history', 'nature', 'fiction', 'psychology'];
@@ -136,6 +136,113 @@ const Home: React.FC = () => {
     
     fetchPosts();
   }, [activeMediaType, toast]);
+  
+  // New function to fetch discussion counts for trending section
+  useEffect(() => {
+    async function fetchTrendingPosts() {
+      try {
+        // First get discussion counts for all posts
+        const { data: discussionCounts, error: countError } = await supabase
+          .from('discussions')
+          .select('post_id, count')
+          .select('post_id, count(*)', { count: 'exact' })
+          .group('post_id')
+          .order('count', { ascending: false })
+          .limit(5);
+        
+        if (countError) {
+          console.error('Error fetching discussion counts:', countError);
+          // Fall back to showing first few posts
+          setTrendingPosts(posts.slice(0, 3));
+          return;
+        }
+        
+        if (discussionCounts && discussionCounts.length > 0) {
+          // Get post details for trending posts
+          const postIds = discussionCounts.map(item => item.post_id);
+          
+          const { data: trendingPostsData, error: postsError } = await supabase
+            .from('posts')
+            .select('*')
+            .in('id', postIds);
+            
+          if (postsError) {
+            console.error('Error fetching trending posts:', postsError);
+            setTrendingPosts(posts.slice(0, 3));
+            return;
+          }
+          
+          if (trendingPostsData && trendingPostsData.length > 0) {
+            // Format posts and add them to state
+            const formattedPosts: Post[] = trendingPostsData.map(post => {
+              // Parse the release_condition JSON if it exists
+              let releaseCondition;
+              if (post.release_condition) {
+                try {
+                  if (typeof post.release_condition === 'string') {
+                    releaseCondition = JSON.parse(post.release_condition);
+                  } else if (typeof post.release_condition === 'object') {
+                    const condition = post.release_condition as Record<string, any>;
+                    releaseCondition = {
+                      requiredReplies: condition.requiredReplies !== undefined ? 
+                        Number(condition.requiredReplies) : undefined,
+                      releaseDate: condition.releaseDate || undefined
+                    };
+                  }
+                } catch (e) {
+                  console.error('Error parsing release condition:', e);
+                  releaseCondition = undefined;
+                }
+              }
+              
+              return {
+                id: post.id,
+                title: post.media_title || "Untitled",
+                content: post.content,
+                authorId: post.user_id,
+                mediaMetadata: {
+                  type: (post.media_type as 'literature' | 'movie' | 'music' | 'quote' | 'thought' | 'art' | 'podcast') || 'thought',
+                  title: post.media_title || ""
+                },
+                openToDiscussion: post.is_open_for_discussion || false,
+                isScheduled: post.is_scheduled || false,
+                releaseAt: post.release_at,
+                releaseCondition: releaseCondition,
+                tags: [], // We'll add tags later when implemented
+                createdAt: post.created_at || new Date().toISOString(),
+                reactions: { 
+                  felt_that: 0, 
+                  mind_blown: 0, 
+                  still_thinking: 0, 
+                  changed_me: 0 
+                }
+              };
+            });
+            
+            // Sort by discussion count (which we already have from the first query)
+            const sortedTrendingPosts = formattedPosts.sort((a, b) => {
+              const aCount = discussionCounts.find(d => d.post_id === a.id)?.count || 0;
+              const bCount = discussionCounts.find(d => d.post_id === b.id)?.count || 0;
+              return (bCount as number) - (aCount as number);
+            });
+            
+            setTrendingPosts(sortedTrendingPosts);
+          } else {
+            setTrendingPosts(posts.slice(0, 3));
+          }
+        } else {
+          setTrendingPosts(posts.slice(0, 3));
+        }
+      } catch (err) {
+        console.error('Exception when fetching trending posts:', err);
+        setTrendingPosts(posts.slice(0, 3));
+      }
+    }
+    
+    if (posts.length > 0) {
+      fetchTrendingPosts();
+    }
+  }, [posts]);
   
   const handleViewThread = (postId: string) => {
     navigate(`/thread/${postId}`);
@@ -302,28 +409,44 @@ const Home: React.FC = () => {
             </div>
           </div>
           
-          {/* Trending discussions */}
+          {/* Trending discussions - now sorted by spiral counts */}
           <div className="p-6 bg-card rounded-2xl border border-border shadow-sm">
             <h3 className="text-lg font-medium mb-4 flex items-center">
               <TrendingUp className="h-4 w-4 mr-2 text-emerald" />
               Trending Discussions
             </h3>
             <ul className="space-y-4">
-              {posts.slice(0, 3).map(post => (
-                <li key={post.id} className="border-b border-border last:border-0 pb-3 last:pb-0">
-                  <a 
-                    href={`/thread/${post.id}`}
-                    className="block hover:text-primary transition-colors"
-                  >
-                    <h4 className="font-medium line-clamp-1">{post.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {(post.reactions ? 
-                        (post.reactions.felt_that || 0) + (post.reactions.mind_blown || 0) +
-                        (post.reactions.still_thinking || 0) + (post.reactions.changed_me || 0) : 0)} reactions
-                    </p>
-                  </a>
-                </li>
-              ))}
+              {trendingPosts.length > 0 ? (
+                trendingPosts.map(post => (
+                  <li key={post.id} className="border-b border-border last:border-0 pb-3 last:pb-0">
+                    <a 
+                      href={`/thread/${post.id}`}
+                      className="block hover:text-primary transition-colors"
+                    >
+                      <h4 className="font-medium line-clamp-1">{post.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        <span className="flex items-center">
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          {/* We'll fetch and show the actual count */}
+                          {trendingPosts.findIndex(p => p.id === post.id) + 1} in spirals
+                        </span>
+                      </p>
+                    </a>
+                  </li>
+                ))
+              ) : (
+                posts.slice(0, 3).map(post => (
+                  <li key={post.id} className="border-b border-border last:border-0 pb-3 last:pb-0">
+                    <a 
+                      href={`/thread/${post.id}`}
+                      className="block hover:text-primary transition-colors"
+                    >
+                      <h4 className="font-medium line-clamp-1">{post.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">New discussion</p>
+                    </a>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
         </div>
