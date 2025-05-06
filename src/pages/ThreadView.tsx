@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
-import { mockPosts, getUserById } from '@/data/mockData';
+import { getUserById } from '@/data/mockData';
 import { Post } from '@/types';
 import { CustomButton } from '@/components/ui/custom-button';
 import { Input } from '@/components/ui/input';
@@ -17,8 +16,8 @@ const ThreadView: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
-  const [replyContent, setReplyContent] = useState('');
-  const [replies, setReplies] = useState<any[]>([]);
+  const [spiralContent, setSpiralContent] = useState('');
+  const [spirals, setSpirals] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
 
@@ -138,57 +137,57 @@ const ThreadView: React.FC = () => {
   }, [postId, navigate, toast]);
 
   useEffect(() => {
-    async function fetchReplies() {
+    async function fetchSpirals() {
       if (!postId) return;
       
       try {
-        const { data: repliesData, error: repliesError } = await supabase
+        const { data: spiralsData, error: spiralsError } = await supabase
           .from('discussions')
           .select('*, user:user_id(*)')
           .eq('post_id', postId)
           .order('created_at', { ascending: true });
         
-        if (repliesError) {
-          console.error('Error fetching replies:', repliesError);
+        if (spiralsError) {
+          console.error('Error fetching spirals:', spiralsError);
           toast({
             title: "Error",
-            description: "Failed to load replies.",
+            description: "Failed to load spirals.",
             variant: "destructive",
           });
           return;
         }
         
-        if (repliesData) {
-          setReplies(repliesData);
+        if (spiralsData) {
+          setSpirals(spiralsData);
         }
       } catch (err) {
-        console.error('Exception when fetching replies:', err);
+        console.error('Exception when fetching spirals:', err);
         toast({
           title: "Error",
-          description: "Failed to load replies.",
+          description: "Failed to load spirals.",
           variant: "destructive",
         });
       }
     }
     
-    fetchReplies();
+    fetchSpirals();
   }, [postId, toast]);
   
   const handleAuthRequired = () => {
     toast({
       title: "Sign in required",
-      description: "Please sign in to interact with posts and reply to discussions",
+      description: "Please sign in to interact with posts and add to spirals",
     });
     navigate('/auth');
   };
 
-  const handleSubmitReply = async (e: React.FormEvent) => {
+  const handleSubmitSpiral = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!replyContent.trim()) {
+    if (!spiralContent.trim()) {
       toast({
-        title: "Missing reply",
-        description: "Please enter a reply.",
+        title: "Missing content",
+        description: "Please enter your thoughts to add to the spiral.",
         variant: "destructive",
       });
       return;
@@ -205,7 +204,7 @@ const ThreadView: React.FC = () => {
       if (!user) {
         toast({
           title: "Authentication required",
-          description: "Please sign in to reply.",
+          description: "Please sign in to add to the spiral.",
           variant: "destructive",
         });
         return;
@@ -216,31 +215,31 @@ const ThreadView: React.FC = () => {
         .insert({
           post_id: postId,
           user_id: user.id,
-          content: replyContent.trim(),
+          content: spiralContent.trim(),
           created_at: new Date().toISOString()
         });
       
       if (error) {
-        console.error("Error creating reply:", error);
+        console.error("Error creating spiral:", error);
         toast({
           title: "Error",
-          description: "Failed to create reply. Please try again.",
+          description: "Failed to add to spiral. Please try again.",
           variant: "destructive",
         });
       } else {
         toast({
           title: "Success",
-          description: "Your reply has been posted!",
+          description: "Your thoughts have been added to the spiral!",
         });
-        setReplyContent('');
-        // Refresh replies
-        fetchReplies();
+        setSpiralContent('');
+        // Refresh spirals
+        fetchSpirals();
       }
     } catch (err) {
-      console.error("Error submitting reply:", err);
+      console.error("Error submitting spiral:", err);
       toast({
         title: "Error",
-        description: "Failed to create reply. Please try again.",
+        description: "Failed to add to spiral. Please try again.",
         variant: "destructive",
       });
     }
@@ -256,36 +255,35 @@ const ThreadView: React.FC = () => {
     }
   };
   
-  async function fetchReplies() {
+  async function fetchSpirals() {
     if (!postId) return;
     
     try {
-      const { data: repliesData, error: repliesError } = await supabase
+      const { data: spiralsData, error: spiralsError } = await supabase
         .from('discussions')
         .select('*, user:user_id(*)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
       
-      if (repliesError) {
-        console.error('Error fetching replies:', repliesError);
+      if (spiralsError) {
+        console.error('Error fetching spirals:', spiralsError);
         toast({
           title: "Error",
-          description: "Failed to load replies.",
+          description: "Failed to load spirals.",
           variant: "destructive",
         });
         return;
       }
       
-      if (repliesData) {
-        setReplies(repliesData);
+      if (spiralsData) {
+        setSpirals(spiralsData);
       }
     } catch (err) {
-      console.error('Exception when fetching replies:', err);
+      console.error('Exception when fetching spirals:', err);
       toast({
         title: "Error",
-        description: "Failed to load replies.",
+        description: "Failed to load spirals.",
         variant: "destructive",
-        
       });
     }
   }
@@ -309,11 +307,11 @@ const ThreadView: React.FC = () => {
           onAuthRequired={handleAuthRequired}
         />
         
-        {/* Sign in prompt for unauthenticated users before the reply form */}
+        {/* Sign in prompt for unauthenticated users before the spiral form */}
         {!user && (
           <div className="mb-8 p-6 bg-card border border-border rounded-2xl shadow-sm w-full">
-            <h2 className="text-xl font-serif font-medium mb-2">Join the conversation</h2>
-            <p className="text-muted-foreground mb-4">Sign in to reply to this discussion.</p>
+            <h2 className="text-xl font-serif font-medium mb-2">Join the spiral</h2>
+            <p className="text-muted-foreground mb-4">Sign in to add your thoughts to this spiral.</p>
             <div className="flex gap-2">
               <CustomButton variant="default" onClick={() => navigate('/auth')}>
                 Sign In
@@ -325,42 +323,42 @@ const ThreadView: React.FC = () => {
           </div>
         )}
 
-        {/* Only show reply form to authenticated users */}
+        {/* Only show spiral form to authenticated users */}
         {user && (
-          <form onSubmit={handleSubmitReply} className="mt-6">
+          <form onSubmit={handleSubmitSpiral} className="mt-6">
             <div className="mb-4">
               <Textarea
-                placeholder="Write your reply..."
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
+                placeholder="Add your thoughts to the spiral..."
+                value={spiralContent}
+                onChange={(e) => setSpiralContent(e.target.value)}
                 className="w-full rounded-md border border-border p-3 resize-none"
               />
             </div>
             <CustomButton type="submit">
-              Post Reply
+              Add to Spiral
             </CustomButton>
           </form>
         )}
         
-        {/* Replies Section */}
+        {/* Spirals Section */}
         <div className="mt-8">
-          <h4 className="text-xl font-serif font-medium mb-4">Replies:</h4>
-          {replies.length > 0 ? (
+          <h4 className="text-xl font-serif font-medium mb-4">Spiral:</h4>
+          {spirals.length > 0 ? (
             <ul className="space-y-4">
-              {replies.map(reply => (
-                <li key={reply.id} className="bg-card rounded-lg p-4 border border-border">
+              {spirals.map(spiral => (
+                <li key={spiral.id} className="bg-card rounded-lg p-4 border border-border">
                   <div className="flex items-start space-x-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={reply.user?.avatar_url} alt={reply.user?.name} />
-                      <AvatarFallback>{reply.user?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      <AvatarImage src={spiral.user?.avatar_url} alt={spiral.user?.name} />
+                      <AvatarFallback>{spiral.user?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium leading-none">{reply.user?.name || "Anonymous"}</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(reply.created_at)}</p>
+                        <p className="text-sm font-medium leading-none">{spiral.user?.name || "Anonymous"}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(spiral.created_at)}</p>
                       </div>
                       <p className="text-sm text-foreground/80">
-                        {reply.content}
+                        {spiral.content}
                       </p>
                     </div>
                   </div>
@@ -368,7 +366,7 @@ const ThreadView: React.FC = () => {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground">No replies yet. Be the first to reply!</p>
+            <p className="text-muted-foreground">No thoughts in this spiral yet. Be the first to add yours!</p>
           )}
         </div>
       </div>

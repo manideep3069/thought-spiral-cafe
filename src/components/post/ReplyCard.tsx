@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Reply, User, ReactionType } from "@/types";
 import { getUserById, getNestedReplies } from "@/data/mockData";
@@ -26,8 +25,8 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
   spiralName
 }) => {
   const [expanded, setExpanded] = React.useState(level < 3);
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [replyContent, setReplyContent] = useState("");
+  const [showSpiralForm, setShowSpiralForm] = useState(false);
+  const [spiralContent, setSpiralContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   
   const author = getUserById(reply.authorId);
@@ -54,11 +53,11 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
     }
   };
   
-  const handleSubmitReply = async (e: React.FormEvent) => {
+  const handleSubmitSpiral = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!replyContent.trim()) {
-      toast.error("Reply cannot be empty");
+    if (!spiralContent.trim()) {
+      toast.error("Your thoughts cannot be empty");
       return;
     }
     
@@ -69,36 +68,36 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
-        toast.error("Please sign in to reply");
+        toast.error("Please sign in to continue the spiral");
         setSubmitting(false);
         return;
       }
       
-      // Add reply to supabase
-      const { data: newReply, error } = await supabase
+      // Add to the spiral in supabase
+      const { data: newSpiral, error } = await supabase
         .from('discussions')
         .insert([
           { 
             post_id: postId,
             user_id: session.user.id,
-            content: replyContent,
+            content: spiralContent,
             parent_discussion_id: reply.id
           }
         ])
         .select();
       
       if (error) {
-        console.error("Error posting reply:", error);
-        toast.error("Failed to post reply: " + error.message);
+        console.error("Error continuing spiral:", error);
+        toast.error("Failed to continue spiral: " + error.message);
         setSubmitting(false);
         return;
       }
       
-      toast.success("Reply posted successfully");
-      setReplyContent("");
-      setShowReplyForm(false);
+      toast.success("Successfully added to the spiral");
+      setSpiralContent("");
+      setShowSpiralForm(false);
       
-      // In a real app, we would update the UI with the new reply
+      // In a real app, we would update the UI with the new spiral
       // For now just reload the page to see the changes
       setTimeout(() => window.location.reload(), 1000);
       
@@ -193,12 +192,12 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
           </div>
         )}
         
-        {/* Reply content */}
+        {/* Spiral content */}
         <div className="mt-1 text-sm text-foreground/90 whitespace-pre-line">
           {reply.content}
         </div>
         
-        {/* Reactions and reply button */}
+        {/* Reactions and continue spiral button */}
         <div className="flex items-center mt-2 space-x-4">
           <div className="flex space-x-2">
             {reactions.length > 0 ? (
@@ -229,21 +228,21 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
           
           <button 
             className="text-xs text-primary font-medium hover:underline inline-flex items-center"
-            onClick={() => setShowReplyForm(!showReplyForm)}
+            onClick={() => setShowSpiralForm(!showSpiralForm)}
           >
             <MessageSquare className="h-3 w-3 mr-1" />
             Continue spiral
           </button>
         </div>
         
-        {/* Reply form */}
-        {showReplyForm && (
+        {/* Spiral form */}
+        {showSpiralForm && (
           <div className="mt-4">
-            <form onSubmit={handleSubmitReply}>
+            <form onSubmit={handleSubmitSpiral}>
               <Textarea
                 placeholder="Continue the spiral..."
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
+                value={spiralContent}
+                onChange={(e) => setSpiralContent(e.target.value)}
                 className="min-h-[100px] text-sm"
                 disabled={submitting}
               />
@@ -252,7 +251,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowReplyForm(false)}
+                  onClick={() => setShowSpiralForm(false)}
                   disabled={submitting}
                 >
                   Cancel
@@ -260,9 +259,9 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
                 <Button 
                   type="submit"
                   size="sm"
-                  disabled={submitting || !replyContent.trim()}
+                  disabled={submitting || !spiralContent.trim()}
                 >
-                  {submitting ? 'Posting...' : 'Add to spiral'}
+                  {submitting ? 'Adding...' : 'Add to spiral'}
                 </Button>
               </div>
             </form>
@@ -270,7 +269,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
         )}
       </div>
       
-      {/* Nested replies - the spiral continues */}
+      {/* Nested spirals - the spiral continues */}
       {hasNestedReplies && expanded && level < maxLevel && (
         <div className="mt-1 spiral-content">
           {nestedReplies.map(nestedReply => (
@@ -285,7 +284,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
         </div>
       )}
       
-      {/* Show/hide nested replies button */}
+      {/* Show/hide nested spirals button */}
       {hasNestedReplies && level < maxLevel && (
         <button 
           className="text-xs font-medium text-primary hover:underline mt-1"

@@ -76,11 +76,11 @@ export const Header: React.FC = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center">
-          <Link to="/" className="flex items-center mr-6">
+          <Link to="/" className="flex flex-col items-center mr-6">
             <span className="text-2xl font-serif font-bold bg-gradient-to-r from-lavender to-emerald bg-clip-text text-transparent">
               GnL
             </span>
-            <span className="ml-1 font-serif text-muted-foreground">{" "}café</span>
+            <span className="font-serif text-muted-foreground text-xs -mt-1">café</span>
           </Link>
           
           {!isMobile && <Navigation />}

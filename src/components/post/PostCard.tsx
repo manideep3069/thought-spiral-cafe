@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Post, User, ReactionType } from "@/types";
 import { getUserById } from "@/data/mockData";
@@ -79,20 +78,42 @@ export const PostCard: React.FC<PostCardProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        const { error } = await supabase
+        // Check if reaction already exists
+        const { data: existingReaction } = await supabase
           .from('post_reactions')
-          .upsert(
-            { 
+          .select('*')
+          .eq('post_id', post.id)
+          .eq('user_id', user.id)
+          .eq('reaction_type', type)
+          .single();
+        
+        if (existingReaction && !newActiveState) {
+          // Delete if toggling off
+          const { error } = await supabase
+            .from('post_reactions')
+            .delete()
+            .eq('post_id', post.id)
+            .eq('user_id', user.id)
+            .eq('reaction_type', type);
+            
+          if (error) {
+            console.error(`Reaction delete error: ${error.message}`);
+            toast.error("Error removing reaction");
+          }
+        } else if (!existingReaction && newActiveState) {
+          // Insert if toggling on
+          const { error } = await supabase
+            .from('post_reactions')
+            .insert({ 
               post_id: post.id, 
               user_id: user.id,
               reaction_type: type
-            },
-            { onConflict: 'post_id,user_id,reaction_type' }
-          );
-        
-        if (error) {
-          console.log(`Reaction error: ${error.message}`);
-          toast.error("Error reacting to post");
+            });
+          
+          if (error) {
+            console.error(`Reaction insert error: ${error.message}`);
+            toast.error("Error adding reaction");
+          }
         }
       }
       
@@ -331,7 +352,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             className="inline-flex items-center"
           >
             <MessageSquare className="h-4 w-4 mr-1" />
-            {compact ? "View Thread" : "Open to Discussion"}
+            {compact ? "View Spiral" : "Open to Spiral"}
           </CustomButton>
           
           <ShareDialog title={post.title} url={shareUrl} />
