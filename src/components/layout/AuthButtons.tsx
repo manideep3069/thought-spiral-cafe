@@ -39,7 +39,7 @@ export const AuthButtons: React.FC<AuthButtonsProps> = ({
   };
 
   const handleSignUp = () => {
-    navigate('/auth');
+    navigate('/auth?mode=signup');
   };
 
   return (

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { OTPVerification } from '@/components/auth/OTPVerification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +12,9 @@ import { SocialAuth } from '@/components/auth/SocialAuth';
 
 const Auth = () => {
   const navigate = useNavigate();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get('mode') === 'signup' ? true : false;
+  const [isSignUp, setIsSignUp] = useState(initialMode);
   const [showOTP, setShowOTP] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
   const [verificationPhone, setVerificationPhone] = useState('');
@@ -91,18 +93,29 @@ const Auth = () => {
               </div>
 
               <div className="space-y-3">
-                <SocialAuth />
-                <div className="text-center text-sm">
-                  <button 
-                    type="button"
-                    className="text-primary hover:underline"
-                    onClick={() => setIsSignUp(!isSignUp)}
-                  >
-                    {isSignUp 
-                      ? 'Already wandered in? Sign In' 
-                      : 'First time here? Sign Up'}
-                  </button>
-                </div>
+                <SocialAuth mode={isSignUp ? 'signup' : 'signin'} />
+                {!isSignUp && (
+                  <div className="text-center text-sm">
+                    <button 
+                      type="button"
+                      className="text-primary hover:underline"
+                      onClick={() => setIsSignUp(true)}
+                    >
+                      First time here? Sign Up
+                    </button>
+                  </div>
+                )}
+                {isSignUp && (
+                  <div className="text-center text-sm">
+                    <button 
+                      type="button"
+                      className="text-primary hover:underline"
+                      onClick={() => setIsSignUp(false)}
+                    >
+                      Already wandered in? Sign In
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}

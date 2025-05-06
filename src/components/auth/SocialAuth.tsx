@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CustomButton } from '@/components/ui/custom-button';
 import { useToast } from '@/hooks/use-toast';
 
-export const SocialAuth: React.FC = () => {
+export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 'signin' }) => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const { toast } = useToast();
 
@@ -14,7 +14,8 @@ export const SocialAuth: React.FC = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: mode === 'signup' ? { prompt: 'select_account' } : undefined
         }
       });
       if (error) {
