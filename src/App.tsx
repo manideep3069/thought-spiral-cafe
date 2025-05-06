@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -142,11 +143,12 @@ const PublicRoute = ({ children }: { children: JSX.Element }) => {
 // Auth callback handler
 const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        setIsLoading(true);
         // Process the OAuth callback
         const { data, error } = await supabase.auth.getSession();
         
@@ -163,7 +165,10 @@ const AuthCallback = () => {
             .eq('id', data.session.user.id)
             .single();
           
-          const isNewUser = !profileError && (!profileData.random_name || !profileData.about);
+          // Consider a user new if they don't have a proper random_name or about section filled
+          const isNewUser = !profileError && (!profileData.random_name || 
+                                             profileData.random_name.startsWith('user_') || 
+                                             !profileData.about);
           
           if (isNewUser) {
             // If new user, redirect to profile page in edit mode
@@ -178,11 +183,21 @@ const AuthCallback = () => {
       } catch (err) {
         console.error("Auth callback error:", err);
         setError("Authentication failed. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
     };
     
     handleAuthCallback();
   }, []);
+  
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
   
   if (error) {
     return (

@@ -11,12 +11,21 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Start the OAuth flow
+      // Generate a unique random name to prevent constraint violations
+      const timestamp = new Date().getTime();
+      const randomSuffix = Math.floor(Math.random() * 10000);
+      const defaultName = `user_${timestamp}_${randomSuffix}`;
+      
+      // Start the OAuth flow with metadata
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: mode === 'signup' ? { prompt: 'select_account' } : undefined
+          queryParams: mode === 'signup' ? { prompt: 'select_account' } : undefined,
+          // Add default profile data
+          data: {
+            random_name: defaultName
+          }
         }
       });
 

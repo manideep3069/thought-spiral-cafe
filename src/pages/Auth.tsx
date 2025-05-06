@@ -13,7 +13,7 @@ import { SocialAuth } from '@/components/auth/SocialAuth';
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialMode = searchParams.get('mode') === 'signup' ? true : false;
+  const initialMode = searchParams.get('mode') === 'signup';
   const [isSignUp, setIsSignUp] = useState(initialMode);
   const [showOTP, setShowOTP] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
@@ -34,7 +34,7 @@ const Auth = () => {
   }, [searchParams]);
 
   const handleVerificationComplete = () => {
-    navigate('/');
+    navigate('/profile?edit=true');
   };
 
   const handleShowEmailOTP = (email: string) => {
