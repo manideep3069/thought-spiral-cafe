@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -143,6 +142,7 @@ const PublicRoute = ({ children }: { children: JSX.Element }) => {
 // Auth callback handler
 const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
   
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -152,9 +152,26 @@ const AuthCallback = () => {
         
         if (error) {
           setError(error.message);
-        } else if (data.session) {
-          // Redirect to profile page after successful authentication
-          window.location.href = '/profile';
+          return;
+        }
+        
+        if (data.session) {
+          // Check if this is a new user by looking at their profile
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('random_name, about')
+            .eq('id', data.session.user.id)
+            .single();
+          
+          const isNewUser = !profileError && (!profileData.random_name || !profileData.about);
+          
+          if (isNewUser) {
+            // If new user, redirect to profile page in edit mode
+            window.location.href = `/profile?edit=true`;
+          } else {
+            // Otherwise redirect to home page
+            window.location.href = '/';
+          }
         } else {
           window.location.href = '/';
         }

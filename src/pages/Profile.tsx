@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
 import { Tag } from '@/components/ui/tag';
@@ -18,6 +19,8 @@ const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const shouldEdit = searchParams.get('edit') === 'true';
   const [activeTab, setActiveTab] = useState<'thoughts' | 'about'>('thoughts');
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,7 +81,7 @@ const Profile: React.FC = () => {
         // Enable edit mode if viewing own profile and just signed up
         if (currentUser && currentUser.id === id) {
           // Check if user just signed up (we'll assume yes for now)
-          setIsEditMode(true);
+          setIsEditMode(shouldEdit || true);
         }
         
         const userMockPosts = mockPosts.filter(post => post.authorId === mockUser.id);
@@ -95,8 +98,8 @@ const Profile: React.FC = () => {
         setGender(profileData.gender || '');
         setCountry(profileData.country || '');
         
-        // Enable edit mode if viewing own profile and fields are empty
-        if (currentUser && currentUser.id === id && (!profileData.random_name || !profileData.about)) {
+        // Enable edit mode if viewing own profile and fields are empty or if edit mode is requested via URL
+        if (currentUser && currentUser.id === id && (shouldEdit || !profileData.random_name || !profileData.about)) {
           setIsEditMode(true);
         }
         
@@ -151,6 +154,11 @@ const Profile: React.FC = () => {
       
       // Exit edit mode
       setIsEditMode(false);
+      
+      // Clear the edit parameter from URL
+      if (shouldEdit) {
+        navigate('/profile', { replace: true });
+      }
       
       // Refresh profile data
       loadUserProfile(currentUser.id);

@@ -11,13 +11,15 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Start the OAuth flow
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: mode === 'signup' ? { prompt: 'select_account' } : undefined
         }
       });
+
       if (error) {
         toast({
           title: "Authentication Error",
@@ -25,12 +27,20 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
           variant: "destructive"
         });
         console.error('Error signing in with Google:', error.message);
+      } else if (!data || !data.url) {
+        toast({
+          title: "Authentication Error",
+          description: "Failed to start authentication process",
+          variant: "destructive"
+        });
+        console.error('Failed to get authentication URL');
       }
-    } catch (error) {
+      // If successful, the user will be redirected to Google
+    } catch (error: any) {
       console.error('Error during Google sign-in:', error);
       toast({
         title: "Authentication Error",
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
         variant: "destructive"
       });
     } finally {

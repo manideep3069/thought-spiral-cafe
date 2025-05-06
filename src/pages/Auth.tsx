@@ -28,6 +28,11 @@ const Auth = () => {
     });
   }, [navigate]);
 
+  useEffect(() => {
+    // Update isSignUp state when the URL parameter changes
+    setIsSignUp(searchParams.get('mode') === 'signup');
+  }, [searchParams]);
+
   const handleVerificationComplete = () => {
     navigate('/');
   };
@@ -48,7 +53,7 @@ const Auth = () => {
         <Card className="w-full max-w-md p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-lavender to-emerald bg-clip-text text-transparent mb-2">
-              Welcome to GnL café
+              {isSignUp ? "Join GnL café" : "Welcome back to GnL café"}
             </h1>
             <p className="text-muted-foreground">
               {isSignUp ? "Welcome, Stranger. The café has been expecting you." : "Welcome back, Wanderer"}
@@ -99,7 +104,7 @@ const Auth = () => {
                     <button 
                       type="button"
                       className="text-primary hover:underline"
-                      onClick={() => setIsSignUp(true)}
+                      onClick={() => navigate('/auth?mode=signup')}
                     >
                       First time here? Sign Up
                     </button>
@@ -110,7 +115,7 @@ const Auth = () => {
                     <button 
                       type="button"
                       className="text-primary hover:underline"
-                      onClick={() => setIsSignUp(false)}
+                      onClick={() => navigate('/auth')}
                     >
                       Already wandered in? Sign In
                     </button>
