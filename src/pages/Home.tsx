@@ -4,7 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { PostCard } from '@/components/post/PostCard';
 import { Tag } from '@/components/ui/tag';
 import { mockPosts } from '@/data/mockData';
-import { Filter, TrendingUp, Book, Music, Film, Mic, Paintbrush } from 'lucide-react';
+import { Filter, TrendingUp, Book, Music, Film, Mic, Paintbrush, MessageSquare } from 'lucide-react';
 import { CustomButton } from '@/components/ui/custom-button';
 import { supabase } from '@/integrations/supabase/client';
 import { Post } from '@/types';
@@ -144,9 +144,7 @@ const Home: React.FC = () => {
         // First get discussion counts for all posts
         const { data: discussionCounts, error: countError } = await supabase
           .from('discussions')
-          .select('post_id, count')
           .select('post_id, count(*)', { count: 'exact' })
-          .group('post_id')
           .order('count', { ascending: false })
           .limit(5);
         
