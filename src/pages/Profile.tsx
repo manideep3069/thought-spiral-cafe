@@ -6,7 +6,7 @@ import { PostCard } from '@/components/post/PostCard';
 import { Tag } from '@/components/ui/tag';
 import { mockUsers, mockPosts } from '@/data/mockData';
 import { CustomButton } from '@/components/ui/custom-button';
-import { Edit, MapPin, Calendar, Heart, Save, LogOut } from 'lucide-react';
+import { Edit, MapPin, Calendar, Heart, Save, LogOut, Book, Globe, User, MessageCircle, GraduationCap } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarPlaceholder } from '@/components/ui/avatar-placeholder';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { getQuoteOfTheDay } from '@/utils/quoteUtils';
 
 const Profile: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -27,6 +31,7 @@ const Profile: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [dailyQuote, setDailyQuote] = useState<{ text: string; author: string }>({ text: '', author: '' });
 
   // Form fields
   const [name, setName] = useState('');
@@ -34,6 +39,12 @@ const Profile: React.FC = () => {
   const [age, setAge] = useState<string>('');
   const [gender, setGender] = useState('');
   const [country, setCountry] = useState('');
+  
+  // Get daily quote
+  useEffect(() => {
+    const quote = getQuoteOfTheDay();
+    setDailyQuote(quote);
+  }, []);
   
   // Check if current user is logged in
   useEffect(() => {
@@ -149,7 +160,7 @@ const Profile: React.FC = () => {
       
       toast({
         title: "Profile Updated",
-        description: "Your profile has been successfully updated",
+        description: "Your intellectual journey has been documented",
       });
       
       // Exit edit mode
@@ -318,6 +329,14 @@ const Profile: React.FC = () => {
         
         {/* Profile content (with extra margin to clear the avatar) */}
         <div className="mt-20 sm:mt-24 relative pb-20">
+          {/* Daily Quote for Intellectual Inspiration - Only show in edit mode */}
+          {isEditMode && dailyQuote.text && (
+            <div className="bg-gradient-to-r from-lavender/10 to-emerald/10 p-6 rounded-xl mb-6">
+              <p className="text-lg italic font-serif mb-2">&ldquo;{dailyQuote.text}&rdquo;</p>
+              <p className="text-right text-sm font-medium">— {dailyQuote.author}</p>
+            </div>
+          )}
+          
           {/* Tags */}
           {userProfile.tags && userProfile.tags.length > 0 && !isEditMode && (
             <div className="mb-8 flex flex-wrap gap-2 justify-center sm:justify-start">
@@ -400,49 +419,65 @@ const Profile: React.FC = () => {
               )}
             </>
           ) : (
-            // Edit profile form
+            // Edit profile form with more intellectual prompts
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
-              <h3 className="text-lg font-medium mb-4">Edit Your Profile</h3>
+              <h3 className="text-lg font-medium mb-4">Define Your Existence</h3>
               
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Country</label>
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-5 w-5 text-primary" />
+                      <label className="text-sm font-medium">Geographic Locus</label>
+                    </div>
                     <Input 
-                      placeholder="Your country"
+                      placeholder="Your country of residence or origin"
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
                     />
+                    <FormDescription>The terrestrial context that frames your perspective</FormDescription>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Age</label>
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="h-5 w-5 text-primary" />
+                        <label className="text-sm font-medium">Temporal Journey</label>
+                      </div>
                       <Input 
                         type="number"
                         placeholder="Your age"
                         value={age}
                         onChange={(e) => setAge(e.target.value)}
                       />
+                      <FormDescription>The sum of your years</FormDescription>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Gender</label>
+                      <div className="flex items-center gap-2">
+                        <User className="h-5 w-5 text-primary" />
+                        <label className="text-sm font-medium">Identity Expression</label>
+                      </div>
                       <Input 
                         placeholder="Your gender"
                         value={gender}
                         onChange={(e) => setGender(e.target.value)}
                       />
+                      <FormDescription>How you perceive your essence</FormDescription>
                     </div>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">About you</label>
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                    <label className="text-sm font-medium">Philosophical Contemplations</label>
+                  </div>
                   <Textarea 
-                    placeholder="Tell us about yourself..."
+                    placeholder="Share your intellectual perspectives, interests, and the questions that occupy your thoughts..."
                     value={about}
                     onChange={(e) => setAbout(e.target.value)}
                     className="min-h-[150px]"
                   />
+                  <FormDescription>Express your worldview, intellectual interests, and the queries that animate your being</FormDescription>
                 </div>
               </div>
               
@@ -451,13 +486,13 @@ const Profile: React.FC = () => {
                   variant="outline" 
                   onClick={() => setIsEditMode(false)}
                 >
-                  Cancel
+                  Abandon
                 </CustomButton>
                 <CustomButton 
                   onClick={handleSaveProfile}
                   isLoading={isSubmitting}
                 >
-                  Save Profile
+                  Immortalize
                 </CustomButton>
               </div>
             </div>

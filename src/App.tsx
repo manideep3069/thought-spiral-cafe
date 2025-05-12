@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -161,24 +160,27 @@ const AuthCallback = () => {
           // Check if this is a new user by looking at their profile
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('random_name, about')
+            .select('random_name, about, gender, country, age')
             .eq('id', data.session.user.id)
             .single();
           
-          // Consider a user new if they don't have a proper random_name or about section filled
+          // Consider a user new if they don't have profile data filled out
           const isNewUser = !profileError && (!profileData.random_name || 
                                              profileData.random_name.startsWith('user_') || 
-                                             !profileData.about);
+                                             !profileData.about || 
+                                             !profileData.gender ||
+                                             !profileData.country ||
+                                             !profileData.age);
           
+          // Always redirect to profile with edit mode for new users
           if (isNewUser) {
-            // If new user, redirect to profile page in edit mode
             window.location.href = `/profile?edit=true`;
           } else {
-            // Otherwise redirect to home page
-            window.location.href = '/';
+            // Otherwise redirect to profile page without edit mode
+            window.location.href = '/profile';
           }
         } else {
-          window.location.href = '/';
+          window.location.href = '/profile?edit=true';
         }
       } catch (err) {
         console.error("Auth callback error:", err);
