@@ -16,17 +16,25 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
       const randomSuffix = Math.floor(Math.random() * 10000);
       const defaultName = `user_${timestamp}_${randomSuffix}`;
       
+      // Setup options for the OAuth flow
+      const options: any = {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      };
+      
+      // Add queryParams for signup mode
+      if (mode === 'signup') {
+        options.queryParams = { prompt: 'select_account' };
+      }
+      
+      // Add user metadata
+      options.data = {
+        random_name: defaultName
+      };
+      
       // Start the OAuth flow with metadata
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: mode === 'signup' ? { prompt: 'select_account' } : undefined,
-          // Add default profile data
-          data: {
-            random_name: defaultName
-          }
-        }
+        options
       });
 
       if (error) {
