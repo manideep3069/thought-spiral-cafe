@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +14,7 @@ import NotificationsPage from "./pages/Notifications";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 import { GroundRulesModal } from "./components/auth/GroundRulesModal";
+import AuthCallback from "./components/auth/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -36,7 +38,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
           .from('profiles')
           .select('rules_accepted')
           .eq('id', currentUser.id)
-          .single();
+          .maybeSingle();
         
         if (profile) {
           setHasAcceptedRules(profile.rules_accepted);
@@ -62,7 +64,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
             .from('profiles')
             .select('rules_accepted')
             .eq('id', currentUser.id)
-            .single();
+            .maybeSingle();
             
           if (profile) {
             setHasAcceptedRules(profile.rules_accepted);
@@ -79,29 +81,6 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     };
   }, []);
   
-  useEffect(() => {
-    // Listen for changes to the profile data to update rule acceptance status
-    if (user) {
-      const profiles = supabase
-        .channel('public:profiles')
-        .on('postgres_changes', { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'profiles',
-          filter: `id=eq.${user.id}`
-        }, (payload) => {
-          if (payload.new && 'rules_accepted' in payload.new) {
-            setHasAcceptedRules(payload.new.rules_accepted as boolean);
-          }
-        })
-        .subscribe();
-        
-      return () => {
-        supabase.removeChannel(profiles);
-      };
-    }
-  }, [user]);
-  
   // Show loading state
   if (loading) {
     return (
@@ -117,7 +96,6 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   }
   
   // If user hasn't accepted rules, show only the rules modal
-  // and a minimal container (not the full app layout)
   if (user && !hasAcceptedRules) {
     return (
       <>
@@ -137,71 +115,6 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 // Public route wrapper with optional auth state
 const PublicRoute = ({ children }: { children: JSX.Element }) => {
   return children;
-};
-
-// Auth callback handler
-const AuthCallback = () => {
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    const handleAuthCallback = async () => {
-      try {
-        setIsLoading(true);
-        // Process the OAuth callback
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Auth callback error:", error);
-          setError(error.message);
-          return;
-        }
-        
-        if (data.session) {
-          // Always redirect to profile with edit mode for newly signed up users
-          // Profile page will handle checking if they need to fill out their info
-          window.location.href = `/profile?edit=true`;
-        } else {
-          window.location.href = '/auth'; // Redirect to auth page if no session
-        }
-      } catch (err) {
-        console.error("Auth callback error:", err);
-        setError("Authentication failed. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    handleAuthCallback();
-  }, []);
-  
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-  
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-xl font-bold mb-2">Authentication Error</h1>
-          <p className="text-muted-foreground">{error}</p>
-          <a href="/auth" className="mt-4 inline-block text-primary hover:underline">
-            Back to login
-          </a>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-    </div>
-  );
 };
 
 const App = () => (

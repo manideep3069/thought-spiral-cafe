@@ -11,15 +11,23 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Setup options for the OAuth flow
+      // Setup options for the OAuth flow with correct redirect URL
+      // Important: Make sure this matches the URL configured in Supabase dashboard
       const options: any = {
         redirectTo: `${window.location.origin}/auth/callback`,
       };
       
       // Add queryParams for signup mode to force account selection
       if (mode === 'signup') {
-        options.queryParams = { prompt: 'select_account' };
+        options.queryParams = { 
+          prompt: 'select_account',
+          // Add additional data for new user profiles
+          // Generate a unique random name to prevent constraint violations
+          random_name: `user_${Date.now()}_${Math.floor(Math.random() * 10000)}`
+        };
       }
+      
+      console.log(`Starting Google OAuth sign-in with redirect: ${options.redirectTo}`);
       
       // Start the OAuth flow
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -41,8 +49,10 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
           variant: "destructive"
         });
         console.error('Failed to get authentication URL');
+      } else {
+        console.log('Redirecting to Google OAuth:', data.url);
+        // The user will be automatically redirected to Google
       }
-      // If successful, the user will be redirected to Google
     } catch (error: any) {
       console.error('Error during Google sign-in:', error);
       toast({

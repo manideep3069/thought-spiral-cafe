@@ -33,6 +33,7 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
         const randomSuffix = Math.floor(Math.random() * 10000);
         const defaultName = `user_${timestamp}_${randomSuffix}`;
         
+        // Disable captcha for development
         result = await supabase.auth.signUp({
           email,
           password,
@@ -40,7 +41,8 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
             data: {
               random_name: defaultName
             },
-            emailRedirectTo: `${window.location.origin}/auth/callback`
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            captchaToken: null // This is needed to bypass captcha in development
           }
         });
         
@@ -68,6 +70,7 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
           }
         }
       } else {
+        // Sign in flow
         result = await supabase.auth.signInWithPassword({
           email,
           password,
