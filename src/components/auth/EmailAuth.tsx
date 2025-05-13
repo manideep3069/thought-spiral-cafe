@@ -25,6 +25,7 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
 
     try {
       let result;
+      
       if (isSignUp) {
         console.log('Attempting email signup:', { email });
         // Generate a unique random name for the user to prevent constraint violations
@@ -49,12 +50,22 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
             description: result.error.message,
             variant: "destructive"
           });
-        } else {
-          onShowOTP(email);
-          toast({
-            title: "Your spiral begins here.",
-            description: "Please check your email for the verification code",
-          });
+        } else if (result.data.user) {
+          if (result.data.session) {
+            // User is immediately signed in
+            toast({
+              title: "Your spiral begins here.",
+              description: "Welcome to the café!",
+            });
+            navigate('/profile?edit=true');
+          } else {
+            // Email confirmation required
+            onShowOTP(email);
+            toast({
+              title: "Your spiral begins here.",
+              description: "Please check your email for the verification code",
+            });
+          }
         }
       } else {
         result = await supabase.auth.signInWithPassword({
@@ -73,7 +84,7 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
             title: "Welcome back, Wanderer.",
             description: "You've successfully signed in",
           });
-          navigate('/');
+          navigate('/profile');
         }
       }
     } catch (error) {

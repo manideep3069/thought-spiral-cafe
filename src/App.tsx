@@ -152,35 +152,17 @@ const AuthCallback = () => {
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error("Auth callback error:", error);
           setError(error.message);
           return;
         }
         
         if (data.session) {
-          // Check if this is a new user by looking at their profile
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('random_name, about, gender, country, age')
-            .eq('id', data.session.user.id)
-            .single();
-          
-          // Consider a user new if they don't have profile data filled out
-          const isNewUser = !profileError && (!profileData.random_name || 
-                                             profileData.random_name.startsWith('user_') || 
-                                             !profileData.about || 
-                                             !profileData.gender ||
-                                             !profileData.country ||
-                                             !profileData.age);
-          
-          // Always redirect to profile with edit mode for new users
-          if (isNewUser) {
-            window.location.href = `/profile?edit=true`;
-          } else {
-            // Otherwise redirect to profile page without edit mode
-            window.location.href = '/profile';
-          }
+          // Always redirect to profile with edit mode for newly signed up users
+          // Profile page will handle checking if they need to fill out their info
+          window.location.href = `/profile?edit=true`;
         } else {
-          window.location.href = '/profile?edit=true';
+          window.location.href = '/auth'; // Redirect to auth page if no session
         }
       } catch (err) {
         console.error("Auth callback error:", err);
