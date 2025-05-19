@@ -27,8 +27,11 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
         };
       }
       
-      // Generate a truly random and unique name - timestamp + big random number
-      const uniqueId = Date.now().toString(36) + Math.random().toString(36).substring(2, 15);
+      // Generate a truly unique name using UUID to avoid collisions
+      // Combining timestamp with random UUID to ensure uniqueness
+      const timestamp = new Date().getTime();
+      const randomStr = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+      const uniqueId = `${timestamp}_${randomStr}`;
       
       // Start the OAuth flow with Google provider
       const { data, error } = await supabase.auth.signInWithOAuth({

@@ -6,4 +6,3 @@ enabled = true
 client_id = "580580979427-642fkfig2rusme9naatotie5fvll298i.apps.googleusercontent.com"
 secret = "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"
 redirect_uri = "https://preview--thought-spiral-cafe.lovable.app/auth/callback"
-

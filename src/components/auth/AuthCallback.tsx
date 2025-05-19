@@ -56,6 +56,7 @@ const AuthCallback = () => {
           
           if (profileError) {
             console.error("Error fetching profile:", profileError);
+            // Even if there's an error fetching the profile, continue with the login flow
           }
           
           console.log("Profile data:", profileData);
@@ -107,7 +108,7 @@ const AuthCallback = () => {
     };
     
     handleAuthCallback();
-  }, []);
+  }, [toast]);
   
   if (isLoading) {
     return (

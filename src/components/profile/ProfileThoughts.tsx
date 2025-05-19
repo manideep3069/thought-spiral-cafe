@@ -16,10 +16,12 @@ export const ProfileThoughts: React.FC<ProfileThoughtsProps> = ({
   // Default to 'this user' if name is not available
   const displayName = userProfile?.random_name || userProfile?.name || 'this user';
   
+  // Handle the case where userPosts is undefined
+  const hasValidPosts = Array.isArray(userPosts) && userPosts.length > 0;
+  
   return (
     <div className="space-y-6">
-      {/* Check if userPosts is available and has items */}
-      {Array.isArray(userPosts) && userPosts.length > 0 ? (
+      {hasValidPosts ? (
         userPosts.map((post) => (
           <PostCard key={post.id} post={post} compact />
         ))

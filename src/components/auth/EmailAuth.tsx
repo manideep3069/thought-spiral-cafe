@@ -28,11 +28,14 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
       
       if (isSignUp) {
         console.log('Attempting email signup:', { email });
-        // Generate a unique random name with high entropy to avoid collisions
-        const uniqueId = Date.now().toString(36) + Math.random().toString(36).substring(2, 15);
+        // Generate a truly unique random name using UUID to avoid collisions
+        // Combining timestamp with random UUID to ensure uniqueness
+        const timestamp = new Date().getTime();
+        const randomStr = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+        const uniqueId = `${timestamp}_${randomStr}`;
         const defaultName = `user_${uniqueId}`;
         
-        // No need for captcha options in development
+        // No need for captcha options in development - explicitly disable captcha
         result = await supabase.auth.signUp({
           email,
           password,
@@ -41,6 +44,7 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
               random_name: defaultName
             },
             emailRedirectTo: `${window.location.origin}/auth/callback`,
+            captchaToken: null // Explicitly set to null to bypass captcha
           }
         });
         
