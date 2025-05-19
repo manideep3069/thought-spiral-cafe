@@ -15,9 +15,12 @@ export const ProfileAbout: React.FC<ProfileAboutProps> = ({ userProfile }) => {
     );
   }
 
+  // Use name as fallback in multiple places
+  const displayName = userProfile.random_name || userProfile.name || 'this user';
+
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
-      <h3 className="text-lg font-medium mb-4">About {userProfile.random_name || 'this user'}</h3>
+      <h3 className="text-lg font-medium mb-4">About {displayName}</h3>
       
       {userProfile.about ? (
         <p className="text-foreground whitespace-pre-line">{userProfile.about}</p>

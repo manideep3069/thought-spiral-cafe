@@ -24,15 +24,22 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
       if (mode === 'signup') {
         options.queryParams = { 
           prompt: 'select_account',
-          // Generate a unique random name to prevent constraint violations
-          random_name: `user_${Date.now()}_${Math.floor(Math.random() * 10000)}`
         };
       }
+      
+      // Generate a truly random and unique name - timestamp + big random number
+      const uniqueId = Date.now().toString(36) + Math.random().toString(36).substring(2, 15);
       
       // Start the OAuth flow with Google provider
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options
+        options: {
+          ...options,
+          // Add this metadata to be used by the profile creation trigger
+          data: {
+            random_name: `user_${uniqueId}`
+          }
+        }
       });
 
       if (error) {

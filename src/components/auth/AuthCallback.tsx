@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,22 @@ const AuthCallback = () => {
       try {
         setIsLoading(true);
         console.log("Auth callback started, processing OAuth response");
+        
+        // Check if there are error parameters in the URL
+        const url = new URL(window.location.href);
+        const errorParam = url.searchParams.get('error');
+        const errorDescriptionParam = url.searchParams.get('error_description');
+        
+        if (errorParam) {
+          console.error("Auth error from URL parameters:", errorParam, errorDescriptionParam);
+          setError(errorDescriptionParam || errorParam);
+          toast({
+            title: "Authentication Error",
+            description: errorDescriptionParam || "An error occurred during sign in",
+            variant: "destructive"
+          });
+          return;
+        }
         
         // Process the OAuth callback
         const { data, error } = await supabase.auth.getSession();
@@ -33,7 +50,7 @@ const AuthCallback = () => {
           // Check if this is a new user by looking at their profile
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('random_name, about, gender, country, age')
+            .select('random_name, about, rules_accepted')
             .eq('id', data.session.user.id)
             .maybeSingle();
           
@@ -44,13 +61,11 @@ const AuthCallback = () => {
           console.log("Profile data:", profileData);
           
           // Consider a user new if they don't have profile data filled out
+          // or if their rules_accepted is false
           const isNewUser = !profileData || 
-                        !profileData.random_name || 
-                        profileData.random_name.startsWith('user_') || 
+                        !profileData.rules_accepted || 
                         !profileData.about || 
-                        !profileData.gender ||
-                        !profileData.country ||
-                        !profileData.age;
+                        (profileData.random_name && profileData.random_name.startsWith('user_'));
           
           console.log("Is new user:", isNewUser);
           

@@ -42,7 +42,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
         
         if (profile) {
           setHasAcceptedRules(profile.rules_accepted);
-          // Show rules modal if user hasn't accepted yet
+          // Only show rules modal for new users who haven't accepted the rules yet
           setShowRulesModal(!profile.rules_accepted);
         }
       }
@@ -68,8 +68,10 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
             
           if (profile) {
             setHasAcceptedRules(profile.rules_accepted);
+            // Only show rules modal for users who haven't accepted the rules
             setShowRulesModal(!profile.rules_accepted);
           } else {
+            // If profile doesn't exist, we'll need to show the rules
             setShowRulesModal(true);
           }
         }

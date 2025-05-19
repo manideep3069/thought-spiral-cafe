@@ -13,11 +13,13 @@ export const ProfileThoughts: React.FC<ProfileThoughtsProps> = ({
   userPosts
 }) => {
   // Ensure we have userProfile before trying to access properties
-  const displayName = userProfile?.random_name || 'this user';
+  // Default to 'this user' if name is not available
+  const displayName = userProfile?.random_name || userProfile?.name || 'this user';
   
   return (
     <div className="space-y-6">
-      {userPosts && userPosts.length > 0 ? (
+      {/* Check if userPosts is available and has items */}
+      {Array.isArray(userPosts) && userPosts.length > 0 ? (
         userPosts.map((post) => (
           <PostCard key={post.id} post={post} compact />
         ))
