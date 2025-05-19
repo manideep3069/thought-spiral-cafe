@@ -12,9 +12,12 @@ export const ProfileThoughts: React.FC<ProfileThoughtsProps> = ({
   userProfile,
   userPosts
 }) => {
+  // Ensure we have userProfile before trying to access properties
+  const displayName = userProfile?.random_name || 'this user';
+  
   return (
     <div className="space-y-6">
-      {userPosts.length > 0 ? (
+      {userPosts && userPosts.length > 0 ? (
         userPosts.map((post) => (
           <PostCard key={post.id} post={post} compact />
         ))
@@ -23,7 +26,7 @@ export const ProfileThoughts: React.FC<ProfileThoughtsProps> = ({
           <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium text-foreground mb-2">No thoughts shared yet</p>
           <p className="text-muted-foreground">
-            When {userProfile.random_name || 'this user'} shares thoughts, they'll appear here.
+            When {displayName} shares thoughts, they'll appear here.
           </p>
         </div>
       )}

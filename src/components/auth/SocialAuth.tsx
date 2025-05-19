@@ -11,50 +11,51 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Setup options for the OAuth flow with correct redirect URL
-      // Important: Make sure this matches the URL configured in Supabase dashboard
+      // Construct the redirect URL using the current window location origin
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      console.log(`Starting Google OAuth with redirect to: ${redirectTo}`);
+      
+      // Setup options for the OAuth flow
       const options: any = {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo,
       };
       
-      // Add queryParams for signup mode to force account selection
+      // Force account selection for signup to ensure users get a chance to select the right account
       if (mode === 'signup') {
         options.queryParams = { 
           prompt: 'select_account',
-          // Add additional data for new user profiles
           // Generate a unique random name to prevent constraint violations
           random_name: `user_${Date.now()}_${Math.floor(Math.random() * 10000)}`
         };
       }
       
-      console.log(`Starting Google OAuth sign-in with redirect: ${options.redirectTo}`);
-      
-      // Start the OAuth flow
+      // Start the OAuth flow with Google provider
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options
       });
 
       if (error) {
+        console.error('Error initiating Google Auth:', error.message);
         toast({
           title: "Authentication Error",
           description: error.message,
           variant: "destructive"
         });
-        console.error('Error signing in with Google:', error.message);
       } else if (!data || !data.url) {
+        console.error('Failed to get authentication URL');
         toast({
           title: "Authentication Error",
           description: "Failed to start authentication process",
           variant: "destructive"
         });
-        console.error('Failed to get authentication URL');
       } else {
-        console.log('Redirecting to Google OAuth:', data.url);
-        // The user will be automatically redirected to Google
+        // Log and redirect to the returned OAuth URL
+        console.log('Redirecting to Google OAuth URL:', data.url);
+        window.location.href = data.url;
       }
     } catch (error: any) {
-      console.error('Error during Google sign-in:', error);
+      console.error('Exception during Google auth:', error);
       toast({
         title: "Authentication Error",
         description: error?.message || "An unexpected error occurred",

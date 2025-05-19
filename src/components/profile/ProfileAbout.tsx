@@ -6,6 +6,15 @@ interface ProfileAboutProps {
 }
 
 export const ProfileAbout: React.FC<ProfileAboutProps> = ({ userProfile }) => {
+  // Guard against undefined userProfile
+  if (!userProfile) {
+    return (
+      <div className="bg-card border border-border rounded-2xl p-6">
+        <p className="text-muted-foreground italic">Profile information unavailable.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card border border-border rounded-2xl p-6">
       <h3 className="text-lg font-medium mb-4">About {userProfile.random_name || 'this user'}</h3>

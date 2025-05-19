@@ -33,7 +33,7 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
         const randomSuffix = Math.floor(Math.random() * 10000);
         const defaultName = `user_${timestamp}_${randomSuffix}`;
         
-        // Disable captcha for development
+        // Bypass captcha for development
         result = await supabase.auth.signUp({
           email,
           password,
@@ -42,9 +42,10 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
               random_name: defaultName
             },
             emailRedirectTo: `${window.location.origin}/auth/callback`,
-            captchaToken: null // This is needed to bypass captcha in development
           }
         });
+        
+        console.log('Sign up result:', result);
         
         if (result.error) {
           toast({
@@ -76,6 +77,8 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
           password,
         });
         
+        console.log('Sign in result:', result);
+        
         if (result.error) {
           toast({
             title: "Sign In Error",
@@ -90,11 +93,11 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
           navigate('/profile');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error during authentication:', error);
       toast({
         title: "Authentication Error",
-        description: "An unexpected error occurred",
+        description: error?.message || "An unexpected error occurred",
         variant: "destructive"
       });
     } finally {
