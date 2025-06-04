@@ -5,7 +5,7 @@ import type { Database } from './types';
 // Use proxy URL for development environment
 const isDevelopment = import.meta.env.DEV;
 const SUPABASE_URL = isDevelopment 
-  ? '/supabase-proxy'
+  ? `${window.location.origin}/supabase-proxy`
   : 'https://wmgdwcfliwivqgaqifhw.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndtZ2R3Y2ZsaXdpdnFnYXFpZmh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1ODMzNzEsImV4cCI6MjA1OTE1OTM3MX0.95E5bST2kWIlihDlM0H8zeD6Dyuv84v-f636TbOuqQw";
 
