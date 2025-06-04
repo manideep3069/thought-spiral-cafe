@@ -148,6 +148,7 @@ const Home: React.FC = () => {
         
         if (discussionError) {
           console.error('Error fetching discussion data:', discussionError);
+          // Use a subset of the posts we already have for trending instead of trying to fetch
           setTrendingPosts(posts.slice(0, 3));
           return;
         }
@@ -177,73 +178,78 @@ const Home: React.FC = () => {
             // Get post details for trending posts
             const postIds = sortedCounts.map(item => item.post_id);
             
-            const { data: trendingPostsData, error: postsError } = await supabase
-              .from('posts')
-              .select('*')
-              .in('id', postIds);
-              
-            if (postsError) {
-              console.error('Error fetching trending posts:', postsError);
-              setTrendingPosts(posts.slice(0, 3));
-              return;
-            }
-            
-            if (trendingPostsData && trendingPostsData.length > 0) {
-              // Format posts and add them to state
-              const formattedPosts: Post[] = trendingPostsData.map(post => {
-                // Parse the release_condition JSON if it exists
-                let releaseCondition;
-                if (post.release_condition) {
-                  try {
-                    if (typeof post.release_condition === 'string') {
-                      releaseCondition = JSON.parse(post.release_condition);
-                    } else if (typeof post.release_condition === 'object') {
-                      const condition = post.release_condition as Record<string, any>;
-                      releaseCondition = {
-                        requiredReplies: condition.requiredReplies !== undefined ? 
-                          Number(condition.requiredReplies) : undefined,
-                        releaseDate: condition.releaseDate || undefined
-                      };
-                    }
-                  } catch (e) {
-                    console.error('Error parsing release condition:', e);
-                    releaseCondition = undefined;
-                  }
-                }
+            try {
+              const { data: trendingPostsData, error: postsError } = await supabase
+                .from('posts')
+                .select('*')
+                .in('id', postIds);
                 
-                return {
-                  id: post.id,
-                  title: post.media_title || "Untitled",
-                  content: post.content,
-                  authorId: post.user_id,
-                  mediaMetadata: {
-                    type: (post.media_type as 'literature' | 'movie' | 'music' | 'quote' | 'thought' | 'art' | 'podcast') || 'thought',
-                    title: post.media_title || ""
-                  },
-                  openToDiscussion: post.is_open_for_discussion || false,
-                  isScheduled: post.is_scheduled || false,
-                  releaseAt: post.release_at,
-                  releaseCondition: releaseCondition,
-                  tags: [], // We'll add tags later when implemented
-                  createdAt: post.created_at || new Date().toISOString(),
-                  reactions: { 
-                    felt_that: 0, 
-                    mind_blown: 0, 
-                    still_thinking: 0, 
-                    changed_me: 0 
+              if (postsError) {
+                console.error('Error fetching trending posts:', postsError);
+                setTrendingPosts(posts.slice(0, 3));
+                return;
+              }
+              
+              if (trendingPostsData && trendingPostsData.length > 0) {
+                // Format posts and add them to state
+                const formattedPosts: Post[] = trendingPostsData.map(post => {
+                  // Parse the release_condition JSON if it exists
+                  let releaseCondition;
+                  if (post.release_condition) {
+                    try {
+                      if (typeof post.release_condition === 'string') {
+                        releaseCondition = JSON.parse(post.release_condition);
+                      } else if (typeof post.release_condition === 'object') {
+                        const condition = post.release_condition as Record<string, any>;
+                        releaseCondition = {
+                          requiredReplies: condition.requiredReplies !== undefined ? 
+                            Number(condition.requiredReplies) : undefined,
+                          releaseDate: condition.releaseDate || undefined
+                        };
+                      }
+                    } catch (e) {
+                      console.error('Error parsing release condition:', e);
+                      releaseCondition = undefined;
+                    }
                   }
-                };
-              });
-              
-              // Sort by discussion count (which we have from our counted array)
-              const sortedTrendingPosts = formattedPosts.sort((a, b) => {
-                const aCount = discussionCounts[a.id] || 0;
-                const bCount = discussionCounts[b.id] || 0;
-                return bCount - aCount;
-              });
-              
-              setTrendingPosts(sortedTrendingPosts);
-            } else {
+                  
+                  return {
+                    id: post.id,
+                    title: post.media_title || "Untitled",
+                    content: post.content,
+                    authorId: post.user_id,
+                    mediaMetadata: {
+                      type: (post.media_type as 'literature' | 'movie' | 'music' | 'quote' | 'thought' | 'art' | 'podcast') || 'thought',
+                      title: post.media_title || ""
+                    },
+                    openToDiscussion: post.is_open_for_discussion || false,
+                    isScheduled: post.is_scheduled || false,
+                    releaseAt: post.release_at,
+                    releaseCondition: releaseCondition,
+                    tags: [], // We'll add tags later when implemented
+                    createdAt: post.created_at || new Date().toISOString(),
+                    reactions: { 
+                      felt_that: 0, 
+                      mind_blown: 0, 
+                      still_thinking: 0, 
+                      changed_me: 0 
+                    }
+                  };
+                });
+                
+                // Sort by discussion count (which we have from our counted array)
+                const sortedTrendingPosts = formattedPosts.sort((a, b) => {
+                  const aCount = discussionCounts[a.id] || 0;
+                  const bCount = discussionCounts[b.id] || 0;
+                  return bCount - aCount;
+                });
+                
+                setTrendingPosts(sortedTrendingPosts);
+              } else {
+                setTrendingPosts(posts.slice(0, 3));
+              }
+            } catch (fetchError) {
+              console.error('Error during trending posts fetch:', fetchError);
               setTrendingPosts(posts.slice(0, 3));
             }
           } else {
@@ -254,6 +260,7 @@ const Home: React.FC = () => {
         }
       } catch (err) {
         console.error('Exception when fetching trending posts:', err);
+        // Fallback to showing a subset of regular posts when trending fetch fails
         setTrendingPosts(posts.slice(0, 3));
       }
     }
