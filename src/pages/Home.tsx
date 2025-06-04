@@ -153,8 +153,15 @@ const Home: React.FC = () => {
           return;
         }
         
+        // Check if the response is valid
+        if (!discussionData || !Array.isArray(discussionData)) {
+          console.error('Invalid discussion data response:', discussionData);
+          setTrendingPosts(posts.slice(0, 3));
+          return;
+        }
+        
         // Count discussions for each post_id
-        if (discussionData && discussionData.length > 0) {
+        if (discussionData.length > 0) {
           // Create a map to count discussions per post
           const discussionCounts = discussionData.reduce((acc, item) => {
             const postId = item.post_id;
@@ -190,7 +197,14 @@ const Home: React.FC = () => {
                 return;
               }
               
-              if (trendingPostsData && trendingPostsData.length > 0) {
+              // Validate the response
+              if (!trendingPostsData || !Array.isArray(trendingPostsData)) {
+                console.error('Invalid trending posts data response:', trendingPostsData);
+                setTrendingPosts(posts.slice(0, 3));
+                return;
+              }
+              
+              if (trendingPostsData.length > 0) {
                 // Format posts and add them to state
                 const formattedPosts: Post[] = trendingPostsData.map(post => {
                   // Parse the release_condition JSON if it exists
