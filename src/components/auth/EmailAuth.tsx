@@ -28,35 +28,58 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
       
       if (isSignUp) {
         console.log('Attempting email signup:', { email });
-        // Generate a truly unique random name using UUID to avoid collisions
-        // Combining timestamp with random UUID to ensure uniqueness
-        const timestamp = new Date().getTime();
-        const randomStr = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+        
+        // Generate a truly unique random name using UUID and timestamp
+        const timestamp = Date.now();
+        const randomStr = crypto.randomUUID ? crypto.randomUUID().substring(0, 8) : Math.random().toString(36).substring(2, 10);
         const uniqueId = `${timestamp}_${randomStr}`;
         const defaultName = `user_${uniqueId}`;
         
-        // No need for captcha options in development - explicitly disable captcha
-        result = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              random_name: defaultName
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-            captchaToken: null // Explicitly set to null to bypass captcha
+        // Add retry logic for connection issues
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (retryCount < maxRetries) {
+          try {
+            result = await supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                data: {
+                  random_name: defaultName
+                },
+                emailRedirectTo: `${window.location.origin}/auth/callback`,
+              }
+            });
+            break; // Success, exit retry loop
+          } catch (retryError: any) {
+            if (retryError.message?.includes('upstream connect error') && retryCount < maxRetries - 1) {
+              console.log(`Connection error during signup, retrying... (${retryCount + 1}/${maxRetries})`);
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+              continue;
+            }
+            throw retryError;
           }
-        });
+        }
         
         console.log('Sign up result:', result);
         
-        if (result.error) {
-          toast({
-            title: "Sign Up Error",
-            description: result.error.message,
-            variant: "destructive"
-          });
-        } else if (result.data.user) {
+        if (result?.error) {
+          if (result.error.message.includes('upstream connect error')) {
+            toast({
+              title: "Connection Error",
+              description: "Unable to connect to the server. Please check your internet connection and try again.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Sign Up Error",
+              description: result.error.message,
+              variant: "destructive"
+            });
+          }
+        } else if (result?.data.user) {
           if (result.data.session) {
             // User is immediately signed in
             toast({
@@ -74,21 +97,45 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
           }
         }
       } else {
-        // Sign in flow
-        result = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        // Sign in flow with retry logic
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (retryCount < maxRetries) {
+          try {
+            result = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            break; // Success, exit retry loop
+          } catch (retryError: any) {
+            if (retryError.message?.includes('upstream connect error') && retryCount < maxRetries - 1) {
+              console.log(`Connection error during signin, retrying... (${retryCount + 1}/${maxRetries})`);
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+              continue;
+            }
+            throw retryError;
+          }
+        }
         
         console.log('Sign in result:', result);
         
-        if (result.error) {
-          toast({
-            title: "Sign In Error",
-            description: result.error.message,
-            variant: "destructive"
-          });
-        } else if (result.data.session) {
+        if (result?.error) {
+          if (result.error.message.includes('upstream connect error')) {
+            toast({
+              title: "Connection Error",
+              description: "Unable to connect to the server. Please check your internet connection and try again.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Sign In Error",
+              description: result.error.message,
+              variant: "destructive"
+            });
+          }
+        } else if (result?.data.session) {
           toast({
             title: "Welcome back, Wanderer.",
             description: "You've successfully signed in",
@@ -98,9 +145,13 @@ export const EmailAuth: React.FC<EmailAuthProps> = ({ isSignUp, onShowOTP }) => 
       }
     } catch (error: any) {
       console.error('Error during authentication:', error);
+      const errorMessage = error?.message?.includes('upstream connect error')
+        ? "Connection error. Please check your internet connection and try again."
+        : error?.message || "An unexpected error occurred";
+      
       toast({
         title: "Authentication Error",
-        description: error?.message || "An unexpected error occurred",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

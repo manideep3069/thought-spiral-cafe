@@ -1,3 +1,4 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
@@ -11,11 +12,13 @@ export default defineConfig({
     },
   },
   server: {
+    port: 8080,
     proxy: {
       '/supabase-proxy': {
         target: 'https://wmgdwcfliwivqgaqifhw.supabase.co',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/supabase-proxy/, ''),
+        secure: true,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('proxy error', err);

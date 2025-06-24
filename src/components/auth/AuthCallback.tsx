@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -27,81 +26,114 @@ const AuthCallback = () => {
             description: errorDescriptionParam || "An error occurred during sign in",
             variant: "destructive"
           });
+          // Redirect to auth page after error
+          setTimeout(() => {
+            window.location.href = '/auth';
+          }, 3000);
           return;
         }
         
-        // Process the OAuth callback
-        const { data, error } = await supabase.auth.getSession();
+        // Add retry logic for connection issues
+        let retryCount = 0;
+        const maxRetries = 3;
         
-        if (error) {
-          console.error("Auth callback error:", error);
-          setError(error.message);
-          toast({
-            title: "Authentication Error",
-            description: error.message,
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        console.log("Session retrieved:", data.session ? "Valid session" : "No session");
-        
-        if (data.session) {
-          // Check if this is a new user by looking at their profile
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('random_name, about, rules_accepted')
-            .eq('id', data.session.user.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error("Error fetching profile:", profileError);
-            // Even if there's an error fetching the profile, continue with the login flow
+        while (retryCount < maxRetries) {
+          try {
+            // Process the OAuth callback
+            const { data, error } = await supabase.auth.getSession();
+            
+            if (error) {
+              if (error.message.includes('upstream connect error') && retryCount < maxRetries - 1) {
+                console.log(`Connection error, retrying... (${retryCount + 1}/${maxRetries})`);
+                retryCount++;
+                await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // Exponential backoff
+                continue;
+              }
+              throw error;
+            }
+            
+            console.log("Session retrieved:", data.session ? "Valid session" : "No session");
+            
+            if (data.session) {
+              // Check if this is a new user by looking at their profile
+              try {
+                const { data: profileData, error: profileError } = await supabase
+                  .from('profiles')
+                  .select('random_name, about, rules_accepted')
+                  .eq('id', data.session.user.id)
+                  .maybeSingle();
+                
+                if (profileError && !profileError.message.includes('upstream connect error')) {
+                  console.error("Error fetching profile:", profileError);
+                }
+                
+                console.log("Profile data:", profileData);
+                
+                // Consider a user new if they don't have profile data filled out
+                // or if their rules_accepted is false
+                const isNewUser = !profileData || 
+                              !profileData.rules_accepted || 
+                              !profileData.about || 
+                              (profileData.random_name && profileData.random_name.startsWith('user_'));
+                
+                console.log("Is new user:", isNewUser);
+                
+                if (isNewUser) {
+                  // Redirect new users to profile with edit mode
+                  toast({
+                    title: "Welcome to GnL Café",
+                    description: "Please complete your profile",
+                  });
+                  window.location.href = `/profile?edit=true`;
+                } else {
+                  // Existing users go to regular profile
+                  toast({
+                    title: "Welcome back",
+                    description: "You've successfully signed in",
+                  });
+                  window.location.href = '/profile';
+                }
+              } catch (profileError) {
+                console.error("Error checking profile:", profileError);
+                // If profile check fails, still redirect to profile edit
+                window.location.href = `/profile?edit=true`;
+              }
+            } else {
+              console.log("No session found, redirecting to auth page");
+              toast({
+                title: "Authentication Failed",
+                description: "Please try signing in again",
+                variant: "destructive"
+              });
+              window.location.href = '/auth';
+            }
+            break; // Success, exit retry loop
+          } catch (retryError: any) {
+            console.error(`Attempt ${retryCount + 1} failed:`, retryError);
+            if (retryCount === maxRetries - 1) {
+              throw retryError; // Last attempt failed, throw error
+            }
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           }
-          
-          console.log("Profile data:", profileData);
-          
-          // Consider a user new if they don't have profile data filled out
-          // or if their rules_accepted is false
-          const isNewUser = !profileData || 
-                        !profileData.rules_accepted || 
-                        !profileData.about || 
-                        (profileData.random_name && profileData.random_name.startsWith('user_'));
-          
-          console.log("Is new user:", isNewUser);
-          
-          if (isNewUser) {
-            // Redirect new users to profile with edit mode
-            toast({
-              title: "Welcome to GnL Café",
-              description: "Please complete your profile",
-            });
-            window.location.href = `/profile?edit=true`;
-          } else {
-            // Existing users go to regular profile
-            toast({
-              title: "Welcome back",
-              description: "You've successfully signed in",
-            });
-            window.location.href = '/profile';
-          }
-        } else {
-          console.log("No session found, redirecting to auth page");
-          toast({
-            title: "Authentication Failed",
-            description: "Please try signing in again",
-            variant: "destructive"
-          });
-          window.location.href = '/auth'; // Redirect to auth page if no session
         }
       } catch (err: any) {
         console.error("Unhandled auth callback error:", err);
-        setError("Authentication failed. Please try again.");
+        const errorMessage = err?.message?.includes('upstream connect error') 
+          ? "Connection error. Please check your internet connection and try again."
+          : err?.message || "An unexpected error occurred";
+        
+        setError(errorMessage);
         toast({
           title: "Authentication Error",
-          description: err?.message || "An unexpected error occurred",
+          description: errorMessage,
           variant: "destructive"
         });
+        
+        // Redirect to auth page after error
+        setTimeout(() => {
+          window.location.href = '/auth';
+        }, 3000);
       } finally {
         setIsLoading(false);
       }
@@ -113,7 +145,10 @@ const AuthCallback = () => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Completing authentication...</p>
+        </div>
       </div>
     );
   }
@@ -121,9 +156,10 @@ const AuthCallback = () => {
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md px-6">
           <h1 className="text-xl font-bold mb-2">Authentication Error</h1>
-          <p className="text-muted-foreground">{error}</p>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <p className="text-sm text-muted-foreground">Redirecting to login page...</p>
           <a href="/auth" className="mt-4 inline-block text-primary hover:underline">
             Back to login
           </a>
