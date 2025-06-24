@@ -11,7 +11,7 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      // Construct the redirect URL using the current window location origin
+      // Use the current origin for redirect
       const redirectTo = `${window.location.origin}/auth/callback`;
       console.log(`Starting Google OAuth with redirect to: ${redirectTo}`);
       
@@ -28,7 +28,6 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
       }
       
       // Generate a truly unique name using UUID to avoid collisions
-      // Combining timestamp with random UUID to ensure uniqueness
       const timestamp = new Date().getTime();
       const randomStr = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
       const uniqueId = `${timestamp}_${randomStr}`;
@@ -47,11 +46,21 @@ export const SocialAuth: React.FC<{ mode?: 'signin' | 'signup' }> = ({ mode = 's
 
       if (error) {
         console.error('Error initiating Google Auth:', error.message);
-        toast({
-          title: "Authentication Error",
-          description: error.message,
-          variant: "destructive"
-        });
+        
+        // Check for specific error types
+        if (error.message.includes('refused to connect') || error.message.includes('X-Frame-Options')) {
+          toast({
+            title: "OAuth Configuration Error",
+            description: "Google OAuth is not properly configured. Please check the redirect URI settings.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Authentication Error",
+            description: error.message,
+            variant: "destructive"
+          });
+        }
       } else if (!data || !data.url) {
         console.error('Failed to get authentication URL');
         toast({
