@@ -25,6 +25,7 @@ export const Header: React.FC = () => {
   });
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isNewThoughtModalOpen, setIsNewThoughtModalOpen] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
   const { profile, isProfileSetupNeeded, completeProfileSetup, requireProfile } = useProfile();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -66,10 +67,11 @@ export const Header: React.FC = () => {
   const handleNewThought = async () => {
     // Check if profile is available
     const hasProfile = await requireProfile();
-    if (hasProfile) {
+    if (!hasProfile) {
+      setShowProfileSetup(true);
+    } else {
       setIsNewThoughtModalOpen(true);
     }
-    // If no profile, the ProfileSetup modal will show automatically
   };
 
   const handleSignIn = () => {
@@ -142,9 +144,13 @@ export const Header: React.FC = () => {
       />
       
       <ProfileSetup 
-        isOpen={isProfileSetupNeeded}
-        onComplete={completeProfileSetup}
-        onClose={() => {}}
+        isOpen={showProfileSetup}
+        onComplete={(userId) => {
+          completeProfileSetup(userId);
+          setShowProfileSetup(false);
+          setIsNewThoughtModalOpen(true);
+        }}
+        onClose={() => setShowProfileSetup(false)}
       />
     </header>
   );

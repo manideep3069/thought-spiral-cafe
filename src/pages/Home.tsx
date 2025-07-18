@@ -317,7 +317,13 @@ const Home: React.FC = () => {
       <div className="w-full flex flex-col lg:flex-row gap-8">
         {/* Main content area */}
         <div className="flex-1 flex flex-col items-center">
-          {/* Removed Quote of the Day section */}
+          {/* Quote section */}
+          <div className="mb-8 p-6 bg-gradient-to-br from-lavender/10 to-emerald/10 rounded-2xl border border-border shadow-sm w-full max-w-2xl">
+            <blockquote className="pl-4 border-l-4 border-lavender italic">
+              <p className="text-foreground/80">{quoteOfTheDay.text}</p>
+              <footer className="mt-2 text-sm text-muted-foreground">— {quoteOfTheDay.author}</footer>
+            </blockquote>
+          </div>
           
           {/* Removed the sign in prompt for unauthenticated users */}
           

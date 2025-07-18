@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -148,6 +148,9 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete, 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Welcome! Let's get you started</DialogTitle>
+          <DialogDescription>
+            Please set up your profile to start posting and reacting to thoughts.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
