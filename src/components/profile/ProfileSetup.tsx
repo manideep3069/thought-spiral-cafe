@@ -10,9 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 interface ProfileSetupProps {
   isOpen: boolean;
   onComplete: (userId: string) => void;
+  onClose?: () => void;
 }
 
-export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete }) => {
+export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete, onClose }) => {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [rulesAccepted, setRulesAccepted] = useState(false);
@@ -20,8 +21,36 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete }
   const { toast } = useToast();
 
   const generateRandomName = () => {
-    const adjectives = ['Curious', 'Thoughtful', 'Creative', 'Wise', 'Adventurous', 'Peaceful', 'Bold', 'Gentle'];
-    const nouns = ['Thinker', 'Explorer', 'Dreamer', 'Wanderer', 'Observer', 'Creator', 'Seeker', 'Spirit'];
+    const adjectives = [
+      'Curious', 'Thoughtful', 'Creative', 'Wise', 'Adventurous', 'Peaceful', 'Bold', 'Gentle',
+      'Brave', 'Calm', 'Clever', 'Cool', 'Eager', 'Elegant', 'Epic', 'Fair', 'Free', 'Fresh',
+      'Happy', 'Honest', 'Humble', 'Kind', 'Lively', 'Lucky', 'Merry', 'Nice', 'Noble', 'Open',
+      'Proud', 'Quick', 'Quiet', 'Ready', 'Real', 'Rich', 'Safe', 'Sharp', 'Shy', 'Smart',
+      'Strong', 'Swift', 'True', 'Unique', 'Warm', 'Wild', 'Young', 'Zen', 'Active', 'Agile',
+      'Alert', 'Amazed', 'Aware', 'Bright', 'Clear', 'Direct', 'Dynamic', 'Easy', 'Exact',
+      'Fast', 'Fine', 'Firm', 'Fit', 'Fluid', 'Focus', 'Full', 'Good', 'Great', 'Grown',
+      'Hard', 'High', 'Huge', 'Ideal', 'Inner', 'Keen', 'Large', 'Light', 'Live', 'Long',
+      'Loose', 'Loud', 'Low', 'Major', 'Mass', 'Max', 'Mean', 'Mega', 'Mild', 'Mini',
+      'Mixed', 'Modal', 'Model', 'New', 'Next', 'Old', 'One', 'Only', 'Pure', 'Rare',
+      'Raw', 'Real', 'Rich', 'Right', 'Solid', 'Sound', 'Super', 'Sure', 'Sweet', 'Top',
+      'True', 'Ultra', 'United', 'Urban', 'Used', 'Valid', 'Vast', 'Vital', 'Vivid', 'Whole'
+    ];
+    
+    const nouns = [
+      'Thinker', 'Explorer', 'Dreamer', 'Wanderer', 'Observer', 'Creator', 'Seeker', 'Spirit',
+      'Artist', 'Builder', 'Dancer', 'Fighter', 'Helper', 'Hunter', 'Leader', 'Learner',
+      'Maker', 'Player', 'Reader', 'Runner', 'Singer', 'Teacher', 'Writer', 'Actor',
+      'Angel', 'Bear', 'Bird', 'Cat', 'Dog', 'Eagle', 'Fox', 'Horse', 'Lion', 'Wolf',
+      'Moon', 'Star', 'Sun', 'Wind', 'Fire', 'Ice', 'Rain', 'Snow', 'Storm', 'Wave',
+      'Bridge', 'Castle', 'Forest', 'Garden', 'House', 'Island', 'Lake', 'Mountain', 'Ocean', 'River',
+      'Bell', 'Book', 'Crown', 'Door', 'Flame', 'Gem', 'Key', 'Light', 'Mirror', 'Ring',
+      'Shadow', 'Shield', 'Stone', 'Sword', 'Tower', 'Tree', 'Voice', 'Whisper', 'Wonder', 'Zone',
+      'Ace', 'Boss', 'Chief', 'Duke', 'Elder', 'Fox', 'Guard', 'Hero', 'Icon', 'Judge',
+      'King', 'Lord', 'Master', 'Noble', 'Oracle', 'Prince', 'Queen', 'Ruler', 'Sage', 'Titan',
+      'Agent', 'Blade', 'Cipher', 'Dragon', 'Echo', 'Falcon', 'Ghost', 'Hawk', 'Iron', 'Jade',
+      'Knight', 'Lance', 'Mage', 'Ninja', 'Opal', 'Pixel', 'Quest', 'Raven', 'Scout', 'Thunder'
+    ];
+    
     const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
     const randomNum = Math.floor(Math.random() * 1000);
@@ -108,7 +137,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Welcome! Let's get you started</DialogTitle>

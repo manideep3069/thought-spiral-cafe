@@ -144,6 +144,7 @@ export const Header: React.FC = () => {
       <ProfileSetup 
         isOpen={isProfileSetupNeeded}
         onComplete={completeProfileSetup}
+        onClose={() => {}}
       />
     </header>
   );
