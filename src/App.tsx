@@ -32,10 +32,10 @@ const App = () => (
             <Route path="/" element={<PublicRoute><Home /></PublicRoute>} />
             <Route path="/discover" element={<PublicRoute><Discover /></PublicRoute>} />
             <Route path="/thread/:postId" element={<PublicRoute><ThreadView /></PublicRoute>} />
-            {/* Protected routes that require authentication */}
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            {/* Temporarily disabled authentication - routes now public */}
+            <Route path="/profile" element={<PublicRoute><Profile /></PublicRoute>} />
+            <Route path="/profile/:userId" element={<PublicRoute><Profile /></PublicRoute>} />
+            <Route path="/notifications" element={<PublicRoute><NotificationsPage /></PublicRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
