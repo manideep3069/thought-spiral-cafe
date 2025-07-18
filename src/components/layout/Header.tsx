@@ -25,7 +25,7 @@ export const Header: React.FC = () => {
   });
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isNewThoughtModalOpen, setIsNewThoughtModalOpen] = useState(false);
-  const { profile, isProfileSetupNeeded, completeProfileSetup } = useProfile();
+  const { profile, isProfileSetupNeeded, completeProfileSetup, requireProfile } = useProfile();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -63,13 +63,13 @@ export const Header: React.FC = () => {
     setIsDarkMode(!isDarkMode);
   };
 
-  const handleNewThought = () => {
-    // Check if profile setup is needed first
-    if (isProfileSetupNeeded) {
-      // Profile setup modal will handle this
-      return;
+  const handleNewThought = async () => {
+    // Check if profile is available
+    const hasProfile = await requireProfile();
+    if (hasProfile) {
+      setIsNewThoughtModalOpen(true);
     }
-    setIsNewThoughtModalOpen(true);
+    // If no profile, the ProfileSetup modal will show automatically
   };
 
   const handleSignIn = () => {

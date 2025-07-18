@@ -10,7 +10,7 @@ interface UserProfile {
 export const useProfile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isProfileSetupNeeded, setIsProfileSetupNeeded] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Changed to false - no auto check
 
   const checkProfile = async () => {
     setIsLoading(true);
@@ -69,9 +69,15 @@ export const useProfile = () => {
     setIsProfileSetupNeeded(true);
   };
 
-  useEffect(() => {
-    checkProfile();
-  }, []);
+  // Remove auto-check on mount - only check when needed
+  // useEffect(() => {
+  //   checkProfile();
+  // }, []);
+
+  const requireProfile = async () => {
+    await checkProfile();
+    return !isProfileSetupNeeded;
+  };
 
   return {
     profile,
@@ -79,6 +85,7 @@ export const useProfile = () => {
     isLoading,
     completeProfileSetup,
     clearProfile,
-    refreshProfile: checkProfile
+    refreshProfile: checkProfile,
+    requireProfile
   };
 };

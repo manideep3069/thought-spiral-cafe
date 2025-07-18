@@ -84,10 +84,12 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete, 
     }
 
     setIsSubmitting(true);
+    console.log('Starting profile creation...'); // Debug log
 
     try {
       // Generate a temporary user ID
       const tempUserId = crypto.randomUUID();
+      console.log('Generated temp user ID:', tempUserId); // Debug log
       
       // Create profile in database
       const { error } = await supabase
@@ -100,6 +102,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete, 
           role: 'user'
         });
 
+      console.log('Database insert result:', { error }); // Debug log
+
       if (error) {
         console.error('Profile creation error:', error);
         toast({
@@ -107,6 +111,7 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete, 
           description: "Failed to create profile. Please try again.",
           variant: "destructive",
         });
+        setIsSubmitting(false);
         return;
       }
 
@@ -117,6 +122,8 @@ export const ProfileSetup: React.FC<ProfileSetupProps> = ({ isOpen, onComplete, 
         name: name.trim(),
         age: ageNum
       }));
+
+      console.log('Profile created successfully, calling onComplete'); // Debug log
 
       toast({
         title: "Welcome!",
