@@ -42,15 +42,18 @@ export const AuthButtons: React.FC<AuthButtonsProps> = ({
     navigate('/auth?mode=signup');
   };
 
-  return (
-    <div className="flex items-center space-x-2">
-      <CustomButton variant="outline" size="sm" onClick={handleSignIn}>
-        <LogIn className="h-4 w-4 mr-2" />
-        Sign In
-      </CustomButton>
-      <CustomButton variant="accent" size="sm" onClick={handleSignUp}>
-        Sign Up
-      </CustomButton>
-    </div>
-  );
+  // Temporarily disabled authentication buttons
+  return null;
+  
+  // return (
+  //   <div className="flex items-center space-x-2">
+  //     <CustomButton variant="outline" size="sm" onClick={handleSignIn}>
+  //       <LogIn className="h-4 w-4 mr-2" />
+  //       Sign In
+  //     </CustomButton>
+  //     <CustomButton variant="accent" size="sm" onClick={handleSignUp}>
+  //       Sign Up
+  //     </CustomButton>
+  //   </div>
+  // );
 };
