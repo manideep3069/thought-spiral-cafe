@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CustomButton } from "@/components/ui/custom-button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
 
 interface NewThoughtModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export const NewThoughtModal: React.FC<NewThoughtModalProps> = ({
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { profile } = useProfile();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,51 +41,54 @@ export const NewThoughtModal: React.FC<NewThoughtModalProps> = ({
       return;
     }
 
-    setIsSubmitting(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    if (!profile) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to post thoughts",
+        title: "Profile required",
+        description: "Please complete your profile setup first",
         variant: "destructive",
       });
       onClose();
       return;
     }
 
-    // Fix: Match column names properly with the database schema
-    const { error } = await supabase.from('posts').insert({
-      content: content.trim(),
-      user_id: user.id,
-      is_open_for_discussion: true, // Default to open for discussion
-      created_at: new Date().toISOString(),
-      media_title: title.trim(),
-      media_type: 'thought'
-    });
+    setIsSubmitting(true);
 
-    setIsSubmitting(false);
+    try {
+      const { error } = await supabase.from('posts').insert({
+        content: content.trim(),
+        user_id: profile.id,
+        is_open_for_discussion: true,
+        media_title: title.trim(),
+        media_type: 'thought'
+      });
 
-    if (error) {
-      console.error("Error creating post:", error);
+      if (error) {
+        console.error("Error creating post:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create thought. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Your thought has been shared!",
+        });
+        setTitle("");
+        setContent("");
+        onClose();
+        // Reload to show the new post
+        setTimeout(() => window.location.reload(), 1000);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
       toast({
         title: "Error",
-        description: "Failed to create thought. Please try again.",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Your thought has been shared!",
-      });
-      setTitle("");
-      setContent("");
-      onClose();
-      // Optional: Reload the page or update the posts list
-      setTimeout(() => window.location.reload(), 1000);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

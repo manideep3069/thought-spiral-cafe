@@ -6,6 +6,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { NewThoughtModal } from "@/components/post/NewThoughtModal";
+import { ProfileSetup } from "@/components/profile/ProfileSetup";
+import { useProfile } from "@/hooks/useProfile";
 import { Navigation } from './Navigation';
 import { SearchBar } from './SearchBar';
 import { AuthButtons } from './AuthButtons';
@@ -23,6 +25,7 @@ export const Header: React.FC = () => {
   });
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isNewThoughtModalOpen, setIsNewThoughtModalOpen] = useState(false);
+  const { profile, isProfileSetupNeeded, completeProfileSetup } = useProfile();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -61,8 +64,9 @@ export const Header: React.FC = () => {
   };
 
   const handleNewThought = () => {
-    if (!user) {
-      navigate('/auth');
+    // Check if profile setup is needed first
+    if (isProfileSetupNeeded) {
+      // Profile setup modal will handle this
       return;
     }
     setIsNewThoughtModalOpen(true);
@@ -135,6 +139,11 @@ export const Header: React.FC = () => {
       <NewThoughtModal 
         isOpen={isNewThoughtModalOpen}
         onClose={() => setIsNewThoughtModalOpen(false)}
+      />
+      
+      <ProfileSetup 
+        isOpen={isProfileSetupNeeded}
+        onComplete={completeProfileSetup}
       />
     </header>
   );

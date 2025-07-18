@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, LogIn } from 'lucide-react';
 import { CustomButton } from '@/components/ui/custom-button';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { useProfile } from '@/hooks/useProfile';
 
 interface AuthButtonsProps {
   user: SupabaseUser | null;
@@ -16,14 +17,18 @@ export const AuthButtons: React.FC<AuthButtonsProps> = ({
   onNewThought,
   onSignIn,
 }) => {
+  const { profile, isProfileSetupNeeded } = useProfile();
   const navigate = useNavigate();
 
-  if (user) {
+  // Show profile and new thought button if we have a temporary profile
+  if (profile && !isProfileSetupNeeded) {
     return (
       <>
         <Link to="/profile">
-          <div className="h-9 w-9 rounded-full bg-lavender/20 flex items-center justify-center overflow-hidden">
-            <User className="h-5 w-5 text-lavender" />
+          <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+            <span className="text-sm font-medium text-primary">
+              {profile.name.charAt(0).toUpperCase()}
+            </span>
           </div>
         </Link>
         
@@ -34,26 +39,19 @@ export const AuthButtons: React.FC<AuthButtonsProps> = ({
     );
   }
 
-  const handleSignIn = () => {
-    navigate('/auth');
-  };
+  // Show new thought button if profile setup is needed (will trigger setup)
+  if (isProfileSetupNeeded) {
+    return (
+      <CustomButton variant="accent" size="sm" onClick={onNewThought}>
+        New Thought
+      </CustomButton>
+    );
+  }
 
-  const handleSignUp = () => {
-    navigate('/auth?mode=signup');
-  };
-
-  // Temporarily disabled authentication buttons
-  return null;
-  
-  // return (
-  //   <div className="flex items-center space-x-2">
-  //     <CustomButton variant="outline" size="sm" onClick={handleSignIn}>
-  //       <LogIn className="h-4 w-4 mr-2" />
-  //       Sign In
-  //     </CustomButton>
-  //     <CustomButton variant="accent" size="sm" onClick={handleSignUp}>
-  //       Sign Up
-  //     </CustomButton>
-  //   </div>
-  // );
+  // Fallback - shouldn't normally reach here
+  return (
+    <CustomButton variant="accent" size="sm" onClick={onNewThought}>
+      New Thought
+    </CustomButton>
+  );
 };
