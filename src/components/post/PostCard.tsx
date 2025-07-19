@@ -65,6 +65,33 @@ export const PostCard: React.FC<PostCardProps> = ({
         ...prev,
         [type]: prev[type] + 1
       }));
+
+      // Add zoom effect to the post
+      const postElement = document.querySelector(`[data-post-id="${post.id}"]`) as HTMLElement;
+      if (postElement) {
+        postElement.style.transform = 'scale(1.02)';
+        postElement.style.transition = 'transform 0.3s ease-out';
+        setTimeout(() => {
+          postElement.style.transform = 'scale(1)';
+        }, 300);
+      }
+
+      // Add background glow effect to the entire page
+      const bodyElement = document.body;
+      if (bodyElement) {
+        const glowColor = {
+          felt_that: 'rgba(239, 68, 68, 0.05)',
+          mind_blown: 'rgba(147, 51, 234, 0.05)', 
+          still_thinking: 'rgba(59, 130, 246, 0.05)',
+          changed_me: 'rgba(16, 185, 129, 0.05)'
+        }[type];
+
+        bodyElement.style.background = `radial-gradient(circle at center, ${glowColor} 0%, transparent 70%)`;
+        bodyElement.style.transition = 'background 0.8s ease-out';
+        setTimeout(() => {
+          bodyElement.style.background = '';
+        }, 1500);
+      }
       
       // Reset animation after delay
       setTimeout(() => {
@@ -172,12 +199,14 @@ export const PostCard: React.FC<PostCardProps> = ({
   const shareUrl = `${window.location.origin}/thread/${post.id}`;
 
   return (
-    <article className={cn(
-      "bg-card rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-500 border border-border relative overflow-hidden",
-      compact ? "max-w-2xl" : "w-full",
-      isScheduledAndNotReleased ? "opacity-75" : "",
-      hasActiveGlitter && activeGlitterType && `shadow-2xl ${glitterColors[activeGlitterType]} animate-[pulse_0.5s_ease-in-out_3]`
-    )}>
+    <article 
+      data-post-id={post.id}
+      className={cn(
+        "bg-card rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-500 border border-border relative overflow-hidden",
+        compact ? "max-w-2xl" : "w-full",
+        isScheduledAndNotReleased ? "opacity-75" : "",
+        hasActiveGlitter && activeGlitterType && `shadow-2xl ${glitterColors[activeGlitterType]} animate-[pulse_0.5s_ease-in-out_3]`
+      )}>
       {/* Glitter overlay */}
       {hasActiveGlitter && activeGlitterType && (
         <div className="absolute inset-0 pointer-events-none">

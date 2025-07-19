@@ -66,10 +66,8 @@ export const NewThoughtModal: React.FC<NewThoughtModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const randomName = getRandomName();
       const { error } = await supabase.from('posts').insert({
         content: content.trim(),
-        author_name: randomName,
         is_open_for_discussion: true,
         media_title: title.trim(),
         media_type: 'thought'
