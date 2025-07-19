@@ -47,65 +47,34 @@ export const PostCard: React.FC<PostCardProps> = ({
     changed_me: false
   });
   
+  const [glitterActive, setGlitterActive] = useState<Record<ReactionType, boolean>>({
+    felt_that: false,
+    mind_blown: false,
+    still_thinking: false,
+    changed_me: false
+  });
+
   const handleReaction = async (type: ReactionType) => {
     try {
-      // If not authenticated, prompt for auth
-      if (!isAuthenticated) {
-        onAuthRequired();
-        return;
-      }
-      
+      // Simply increment the reaction count (no auth required)
       setIsAnimating(prev => ({ ...prev, [type]: true }));
+      setGlitterActive(prev => ({ ...prev, [type]: true }));
       
-      // Toggle the active state of the reaction
-      const newActiveState = !activeReactions[type];
-      setActiveReactions(prev => ({ ...prev, [type]: newActiveState }));
-      
-      // Update the count based on the new active state
-      const newCount = newActiveState 
-        ? (postReactions[type] + 1) 
-        : (postReactions[type] - 1);
-      
+      // Increment the count
       setPostReactions(prev => ({
         ...prev,
-        [type]: newCount < 0 ? 0 : newCount
+        [type]: prev[type] + 1
       }));
       
+      // Reset animation after delay
       setTimeout(() => {
         setIsAnimating(prev => ({ ...prev, [type]: false }));
       }, 300);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Check if reaction already exists
-        const { data: existingReaction } = await supabase
-          .from('post_reactions')
-          .select('*')
-          .eq('post_id', post.id)
-          .eq('user_id', user.id)
-          .eq('reaction_type', type)
-          .single();
-        
-        if (existingReaction && !newActiveState) {
-          // Delete if toggling off
-          await supabase
-            .from('post_reactions')
-            .delete()
-            .eq('post_id', post.id)
-            .eq('user_id', user.id)
-            .eq('reaction_type', type);
-        } else if (!existingReaction && newActiveState) {
-          // Insert if toggling on
-          await supabase
-            .from('post_reactions')
-            .insert({ 
-              post_id: post.id, 
-              user_id: user.id,
-              reaction_type: type
-            });
-        }
-      }
+      // Reset glitter after longer delay
+      setTimeout(() => {
+        setGlitterActive(prev => ({ ...prev, [type]: false }));
+      }, 2000);
       
       console.log(`Reacted with ${type} to post ${post.id}`);
     } catch (err) {
@@ -138,6 +107,16 @@ export const PostCard: React.FC<PostCardProps> = ({
     still_thinking: "text-blue-500 hover:text-blue-400",
     changed_me: "text-emerald-500 hover:text-emerald-400"
   };
+
+  const glitterColors = {
+    felt_that: "shadow-red-500/50",
+    mind_blown: "shadow-purple-500/50", 
+    still_thinking: "shadow-blue-500/50",
+    changed_me: "shadow-emerald-500/50"
+  };
+
+  const hasActiveGlitter = Object.values(glitterActive).some(active => active);
+  const activeGlitterType = Object.entries(glitterActive).find(([_, active]) => active)?.[0] as ReactionType;
 
   const mediaTypeIcons: Record<string, React.ReactNode> = {
     literature: <Book className="h-4 w-4 mr-1 text-blue-500" />,
@@ -194,10 +173,42 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   return (
     <article className={cn(
-      "bg-card rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow border border-border",
+      "bg-card rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-500 border border-border relative overflow-hidden",
       compact ? "max-w-2xl" : "w-full",
-      isScheduledAndNotReleased ? "opacity-75" : ""
+      isScheduledAndNotReleased ? "opacity-75" : "",
+      hasActiveGlitter && activeGlitterType && `shadow-2xl ${glitterColors[activeGlitterType]} animate-[pulse_0.5s_ease-in-out_3]`
     )}>
+      {/* Glitter overlay */}
+      {hasActiveGlitter && activeGlitterType && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className={cn(
+            "absolute inset-0 rounded-2xl opacity-20 animate-[pulse_0.5s_ease-in-out_3]",
+            activeGlitterType === 'felt_that' && "bg-gradient-to-br from-red-500/30 to-red-300/10",
+            activeGlitterType === 'mind_blown' && "bg-gradient-to-br from-purple-500/30 to-purple-300/10", 
+            activeGlitterType === 'still_thinking' && "bg-gradient-to-br from-blue-500/30 to-blue-300/10",
+            activeGlitterType === 'changed_me' && "bg-gradient-to-br from-emerald-500/30 to-emerald-300/10"
+          )} />
+          {/* Sparkle particles */}
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "absolute w-1 h-1 rounded-full animate-ping",
+                activeGlitterType === 'felt_that' && "bg-red-400",
+                activeGlitterType === 'mind_blown' && "bg-purple-400",
+                activeGlitterType === 'still_thinking' && "bg-blue-400", 
+                activeGlitterType === 'changed_me' && "bg-emerald-400"
+              )}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${1 + Math.random()}s`
+              }}
+            />
+          ))}
+        </div>
+      )}
       <div className="flex items-center mb-4">
         <div className="h-10 w-10 rounded-full bg-lavender/20 flex items-center justify-center overflow-hidden">
           {author?.avatar ? (
@@ -285,7 +296,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             onClick={() => handleReaction('felt_that')}
             className={cn(
               "inline-flex items-center whitespace-nowrap text-xs px-2 py-1 rounded-full border transition-all duration-200",
-              activeReactions.felt_that ? "bg-red-500/10 font-medium border-red-500/30" : "border-border hover:bg-muted/50",
+              "border-border hover:bg-muted/50",
               reactionColors.felt_that,
               isAnimating.felt_that && "animate-[scale-in_0.2s_ease-out]"
             )}
@@ -298,7 +309,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             onClick={() => handleReaction('mind_blown')}
             className={cn(
               "inline-flex items-center whitespace-nowrap text-xs px-2 py-1 rounded-full border transition-all duration-200",
-              activeReactions.mind_blown ? "bg-purple-500/10 font-medium border-purple-500/30" : "border-border hover:bg-muted/50",
+              "border-border hover:bg-muted/50",
               reactionColors.mind_blown,
               isAnimating.mind_blown && "animate-[scale-in_0.2s_ease-out]"
             )}
@@ -311,7 +322,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             onClick={() => handleReaction('still_thinking')}
             className={cn(
               "inline-flex items-center whitespace-nowrap text-xs px-2 py-1 rounded-full border transition-all duration-200",
-              activeReactions.still_thinking ? "bg-blue-500/10 font-medium border-blue-500/30" : "border-border hover:bg-muted/50",
+              "border-border hover:bg-muted/50",
               reactionColors.still_thinking,
               isAnimating.still_thinking && "animate-[scale-in_0.2s_ease-out]"
             )}
@@ -323,7 +334,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             onClick={() => handleReaction('changed_me')}
             className={cn(
               "inline-flex items-center whitespace-nowrap text-xs px-2 py-1 rounded-full border transition-all duration-200",
-              activeReactions.changed_me ? "bg-emerald-500/10 font-medium border-emerald-500/30" : "border-border hover:bg-muted/50",
+              "border-border hover:bg-muted/50",
               reactionColors.changed_me,
               isAnimating.changed_me && "animate-[scale-in_0.2s_ease-out]"
             )}

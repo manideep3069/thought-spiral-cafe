@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CustomButton } from "@/components/ui/custom-button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useProfile } from "@/hooks/useProfile";
+
 
 interface NewThoughtModalProps {
   isOpen: boolean;
@@ -26,8 +26,30 @@ export const NewThoughtModal: React.FC<NewThoughtModalProps> = ({
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const { profile } = useProfile();
   const { toast } = useToast();
+
+  // Random name generator
+  const getRandomName = () => {
+    const adjectives = [
+      "Thoughtful", "Curious", "Wandering", "Reflective", "Deep", "Bright", "Gentle", "Wise", "Kind", "Bold",
+      "Peaceful", "Creative", "Inspiring", "Humble", "Patient", "Brave", "Calm", "Joyful", "Grateful", "Mindful",
+      "Hopeful", "Serene", "Vibrant", "Earnest", "Sincere", "Radiant", "Tender", "Honest", "Devoted", "Gracious",
+      "Loyal", "Noble", "Pure", "Steady", "True", "Warm", "Zealous", "Ambitious", "Cheerful", "Confident",
+      "Determined", "Energetic", "Friendly", "Generous", "Happy", "Independent", "Intelligent", "Lively", "Motivated", "Optimistic"
+    ];
+    
+    const nouns = [
+      "Thinker", "Dreamer", "Explorer", "Seeker", "Observer", "Listener", "Writer", "Artist", "Philosopher", "Scholar",
+      "Wanderer", "Creator", "Builder", "Helper", "Teacher", "Student", "Friend", "Guide", "Mentor", "Spirit",
+      "Soul", "Heart", "Mind", "Voice", "Light", "Star", "Moon", "Sun", "River", "Ocean",
+      "Mountain", "Forest", "Garden", "Flower", "Tree", "Bird", "Butterfly", "Feather", "Cloud", "Wind",
+      "Storm", "Rainbow", "Dawn", "Dusk", "Horizon", "Journey", "Path", "Bridge", "Key", "Door"
+    ];
+    
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    return `${randomAdjective} ${randomNoun}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,22 +63,13 @@ export const NewThoughtModal: React.FC<NewThoughtModalProps> = ({
       return;
     }
 
-    if (!profile) {
-      toast({
-        title: "Profile required",
-        description: "Please complete your profile setup first",
-        variant: "destructive",
-      });
-      onClose();
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
+      const randomName = getRandomName();
       const { error } = await supabase.from('posts').insert({
         content: content.trim(),
-        user_id: profile.id,
+        author_name: randomName,
         is_open_for_discussion: true,
         media_title: title.trim(),
         media_type: 'thought'
