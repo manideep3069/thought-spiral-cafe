@@ -66,10 +66,12 @@ export const NewThoughtModal: React.FC<NewThoughtModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Generate a random UUID for the user since we're not using authentication
+      const randomUserId = crypto.randomUUID();
+      
       const { error } = await supabase.from('posts').insert({
         content: content.trim(),
-        user_id: user?.id || '00000000-0000-0000-0000-000000000000', // Default UUID if no user
+        user_id: randomUserId,
         is_open_for_discussion: true,
         media_title: title.trim(),
         media_type: 'thought'
